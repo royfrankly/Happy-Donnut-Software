@@ -1,0 +1,69 @@
+@startuml
+!theme spacelab
+
+package "Inventory Service DB" {
+    entity "insumos" {
+        {PK} insumo_id: SERIAL
+        --
+        nombre_insumo: VARCHAR
+        unidad_medida_base: VARCHAR
+        stock_minimo_alerta: NUMERIC
+        stock_total_calculado: NUMERIC
+    }
+
+    entity "lotes_insumos" {
+        {PK} lote_id: SERIAL
+        --
+        {FK} insumo_id: INTEGER
+        cantidad_comprada: NUMERIC
+        cantidad_restante: NUMERIC
+        fecha_compra: DATE
+        fecha_caducidad: DATE
+        costo_total_compra: NUMERIC
+    }
+    
+    entity "ajustes_inventario" {
+        {PK} ajuste_id: SERIAL
+        --
+        {FK} lote_id: INTEGER
+        empleado_id: INTEGER
+        cantidad: NUMERIC
+        motivo: VARCHAR
+        fecha_ajuste: TIMESTAMP
+    }
+    note right of "ajustes_inventario"
+      ID del Auth Service.
+      No es una FK real.
+    end note
+    
+    entity "productos (Copia Mínima)" as productos_copia {
+        {PK} producto_id: INTEGER
+        --
+        tipo_producto: VARCHAR
+        nombre_producto: VARCHAR
+    }
+    note top of productos_copia
+      Tabla replicada desde
+      el Product Service
+      para autonomía.
+    end note
+    
+    entity "recetas" {
+        {PK} producto_id: INTEGER
+        {PK} insumo_id: INTEGER
+        --
+        cantidad_necesaria: NUMERIC
+    }
+    note left of "recetas" 
+      ID del Product Service.
+      No es una FK real.
+    end note
+}
+
+' --- Relaciones Internas del Servicio ---
+insumos ||--o{ lotes_insumos
+lotes_insumos ||--o{ ajustes_inventario
+insumos }o--|| recetas
+productos_copia }o--|| recetas
+
+@enduml

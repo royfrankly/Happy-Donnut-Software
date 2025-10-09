@@ -1,0 +1,45 @@
+@startuml
+!theme spacelab
+
+package "Product Service DB" {
+    entity "categorias" {
+        {PK} categoria_id: SERIAL
+        --
+        nombre_categoria: VARCHAR
+    }
+
+    entity "productos" {
+        {PK} producto_id: SERIAL
+        --
+        {FK} categoria_id: INTEGER
+        nombre_producto: VARCHAR
+        descripcion: TEXT
+        precio_base: NUMERIC
+        tipo_producto: VARCHAR
+        activo_web: BOOLEAN
+    }
+    
+    entity "promociones" {
+        {PK} promocion_id: SERIAL
+        --
+        nombre_promocion: VARCHAR
+        descripcion: TEXT
+        precio_fijo_combo: NUMERIC
+        fecha_inicio: DATE
+        fecha_fin: DATE
+    }
+    
+    entity "promociones_detalles" {
+        {PK} promocion_id: INTEGER
+        {PK} producto_id: INTEGER
+        --
+        cantidad_producto: INTEGER
+    }
+}
+
+' --- Relaciones Internas del Servicio ---
+categorias ||--o{ productos
+promociones ||--o{ promociones_detalles
+productos }o--|| promociones_detalles
+
+@enduml

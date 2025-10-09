@@ -1,0 +1,26 @@
+@startuml
+!theme spacelab
+
+package "Auth Service DB" {
+    entity "empleados" {
+        {PK} empleado_id: SERIAL
+        --
+        nombre: VARCHAR
+        apellido: VARCHAR
+        dni: VARCHAR
+        telefono: VARCHAR
+        rol: VARCHAR
+        password_hash: VARCHAR
+        estado: BOOLEAN
+        --
+        fecha_creacion: TIMESTAMP
+    }
+    note right of "empleados"
+        password
+      **Crítico:** Este campo nunca
+      debe contener una contraseña
+      en texto plano. Siempre un HASH.
+    end note
+}
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml SincronizacionNuevoProducto
+skinparam handwritten true
+skinparam sequence {
+    ArrowColor DarkBlue
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ParticipantBorderColor DarkBlue
+    ParticipantFontColor DarkBlue
+    LifeLineBorderColor DarkBlue
+    LifeLineBackgroundColor #LightYellow
+    NoteBackgroundColor #LightYellow
+    NoteBorderColor DarkBlue
+}
+
+title Secuencia C: Sincronización de un Nuevo Producto
+
+autonumber "<b>[C.0]"
+
+queue "RabbitMQ" as RMQ
+participant "Inventory Service" as IS
+database "Inventory DB" as IS_DB
+
+' El Product Service (no mostrado) ya publicó el evento
+RMQ ->> IS: Entregar Evento "ProductoCreado"
+activate IS
+
+IS -> IS: Leer datos del evento (producto_id, tipo_producto, nombre_producto)
+
+IS -> IS_DB: Crear/Actualizar registro en 'productos' (copia mínima)
+activate IS_DB
+IS_DB --> IS: Confirmación de guardado
+deactivate IS_DB
+
+deactivate IS
+
+@enduml

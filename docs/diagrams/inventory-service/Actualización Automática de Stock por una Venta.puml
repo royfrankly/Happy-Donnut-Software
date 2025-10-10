@@ -1,0 +1,49 @@
+@startuml ActualizacionStockPorVenta
+skinparam handwritten true
+skinparam sequence {
+    ArrowColor DarkBlue
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ParticipantBorderColor DarkBlue
+    ParticipantFontColor DarkBlue
+    LifeLineBorderColor DarkBlue
+    LifeLineBackgroundColor #LightYellow
+    NoteBackgroundColor #LightYellow
+    NoteBorderColor DarkBlue
+}
+
+title Secuencia A: Actualización de Stock por Venta
+
+autonumber "<b>[A.0]"
+
+queue "RabbitMQ" as RMQ
+participant "Inventory Service" as IS
+database "Inventory DB" as IS_DB
+
+RMQ ->> IS: Entregar Evento "VentaRealizada"
+activate IS
+
+IS -> IS: Procesar evento (leer productos vendidos)
+
+' El servicio consulta su copia local para decidir la lógica
+IS -> IS_DB: Buscar 'tipo_producto' en tabla 'productos' (copia)
+activate IS_DB
+IS_DB --> IS: Devolver 'tipo_producto' ('PREPARADO')
+deactivate IS_DB
+
+IS -> IS_DB: Buscar receta del producto en tabla 'recetas'
+activate IS_DB
+IS_DB --> IS: Devolver insumos y cantidades necesarias
+deactivate IS_DB
+
+IS -> IS: Calcular stock a descontar
+
+IS -> IS_DB: Actualizar 'cantidad_restante' en 'lotes_insumos'
+activate IS_DB
+IS_DB --> IS: Confirmación de actualización
+deactivate IS_DB
+
+' Aquí continuaría la lógica de la Secuencia B...
+deactivate IS
+
+@enduml

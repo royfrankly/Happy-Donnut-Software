@@ -1,0 +1,50 @@
+@startuml GeneracionAlertaStockBajo
+skinparam handwritten true
+skinparam sequence {
+    ArrowColor DarkBlue
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ParticipantBorderColor DarkBlue
+    ParticipantFontColor DarkBlue
+    LifeLineBorderColor DarkBlue
+    LifeLineBackgroundColor #LightYellow
+    NoteBackgroundColor #LightYellow
+    NoteBorderColor DarkBlue
+}
+
+title Secuencia B: Generación de Alerta de Stock Bajo
+
+autonumber "<b>[B.0]"
+
+participant "Inventory Service" as IS
+database "Inventory DB" as IS_DB
+queue "RabbitMQ" as RMQ
+participant "Email Service" as ES
+
+activate IS
+note left of IS: Este flujo comienza después de la actualización de stock de la Secuencia A.
+
+IS -> IS_DB: Calcular stock total del insumo afectado
+activate IS_DB
+IS_DB --> IS: Devolver 'stock_total'
+deactivate IS_DB
+
+IS -> IS_DB: Obtener 'stock_minimo_alerta' para el insumo
+activate IS_DB
+IS_DB --> IS: Devolver 'stock_minimo_alerta'
+deactivate IS_DB
+
+IS -> IS: Comparar: stock_total <= stock_minimo_alerta?
+note right of IS: La condición es VERDADERA
+
+' El servicio publica su propio evento para notificar a otros
+IS ->> RMQ: Publicar Evento "StockBajoDetectado"
+deactivate IS
+
+' El Email Service reacciona al nuevo evento
+RMQ ->> ES: Entregar Evento "StockBajoDetectado"
+activate ES
+ES -> ES: Enviar email de alerta a la dueña
+deactivate ES
+
+@enduml

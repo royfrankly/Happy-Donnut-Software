@@ -1,0 +1,68 @@
+@startuml
+!theme spacelab
+
+package "Order Service DB" {
+    entity "clientes" {
+        {PK} cliente_id: SERIAL
+        --
+        nombre: VARCHAR
+        apellido: VARCHAR
+        telefono: VARCHAR
+        email: VARCHAR
+    }
+    
+    entity "ventas" {
+        {PK} venta_id: SERIAL
+        --
+        cliente_id: INTEGER
+        empleado_id: INTEGER
+        total_venta: NUMERIC
+        estado_pedido: VARCHAR
+        fecha_venta: TIMESTAMP
+    }
+    note left of "ventas"
+      ID del Customer.
+      No es una FK real.
+    end note
+    note left of "ventas"
+      ID del Auth Service.
+      No es una FK real.
+    end note
+
+    entity "detalles_venta" {
+        {PK} detalle_id: SERIAL
+        --
+        {FK} venta_id: INTEGER
+        producto_id: INTEGER
+        nombre_producto: VARCHAR
+        cantidad: INTEGER
+        precio_unitario_venta: NUMERIC
+    }
+    note right of "detalles_venta"
+      'nombre_producto' y 'precio_unitario_venta'
+      son **snapshots** del Product Service
+      para garantizar la integridad histórica.
+    end note
+    
+    entity "metodos_pago" {
+        {PK} metodo_pago_id: SERIAL
+        --
+        nombre_metodo: VARCHAR
+    }
+    
+    entity "pagos" {
+        {PK} pago_id: SERIAL
+        --
+        {FK} venta_id: INTEGER
+        {FK} metodo_pago_id: INTEGER
+        monto: NUMERIC
+    }
+}
+
+' --- Relaciones Internas del Servicio ---
+clientes ||--o{ ventas
+ventas ||--o{ detalles_venta
+ventas ||--o{ pagos
+metodos_pago ||--o{ pagos
+
+@enduml

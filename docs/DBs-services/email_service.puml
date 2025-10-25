@@ -1,0 +1,23 @@
+@startuml
+!theme spacelab
+
+package "Email Service DB" {
+    entity "log_notificaciones" {
+        {PK} log_id: SERIAL
+        --
+        destinatario: VARCHAR
+        asunto: VARCHAR
+        tipo_notificacion: VARCHAR
+        estado: VARCHAR
+        mensaje_error: TEXT
+        --
+        fecha_envio: TIMESTAMP
+    }
+    note right of log_notificaciones
+      Esta tabla actúa como un
+      historial de auditoría. No
+      contiene lógica de negocio.
+    end note
+}
+
+@enduml

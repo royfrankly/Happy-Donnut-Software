@@ -1,0 +1,55 @@
+@startuml RealizarAjusteManualInventario
+skinparam handwritten true
+skinparam sequence {
+    ArrowColor DarkBlue
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ParticipantBorderColor DarkBlue
+    ParticipantFontColor DarkBlue
+    LifeLineBorderColor DarkBlue
+    LifeLineBackgroundColor #LightYellow
+    NoteBackgroundColor #LightYellow
+    NoteBorderColor DarkBlue
+}
+
+title Secuencia D: Registrar Nueva Compra de Insumos
+
+autonumber "<b>[D.0]"
+
+actor "Usuario (Dueña)" as User
+participant "Frontend" as FE
+participant "API Gateway" as GW
+participant "Inventory Service" as IS
+database "Inventory DB" as IS_DB
+
+User -> FE: Llena formulario de compra de insumos
+activate FE
+
+FE -> GW: POST /api/inventario/lotes (con datos del lote)
+activate GW
+
+GW -> IS: Forward Request
+activate IS
+
+IS -> IS: Validar datos de entrada
+
+IS -> IS_DB: INSERT INTO lotes_insumos
+activate IS_DB
+IS_DB --> IS: Confirmación de guardado
+deactivate IS_DB
+
+IS -> IS_DB: UPDATE insumos (actualizar stock_total_calculado)
+activate IS_DB
+IS_DB --> IS: Confirmación de actualización
+deactivate IS_DB
+
+IS --> GW: 201 Created (Lote registrado)
+deactivate IS
+
+GW --> FE: 201 Created
+deactivate GW
+
+FE --> User: Muestra "Compra registrada exitosamente"
+deactivate FE
+
+@enduml

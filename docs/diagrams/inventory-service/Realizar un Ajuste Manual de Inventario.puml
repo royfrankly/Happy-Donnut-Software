@@ -1,0 +1,60 @@
+@startuml RealizarAjusteManualInventario
+skinparam handwritten true
+skinparam sequence {
+    ArrowColor DarkBlue
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ParticipantBorderColor DarkBlue
+    ParticipantFontColor DarkBlue
+    LifeLineBorderColor DarkBlue
+    LifeLineBackgroundColor #LightYellow
+    NoteBackgroundColor #LightYellow
+    NoteBorderColor DarkBlue
+}
+
+title Secuencia E: Realizar Ajuste Manual de Inventario
+
+autonumber "<b>[E.0]"
+
+actor "Usuario (Empleado)" as User
+participant "Frontend" as FE
+participant "API Gateway" as GW
+participant "Inventory Service" as IS
+database "Inventory DB" as IS_DB
+
+User -> FE: Llena formulario de ajuste (ej: merma)
+activate FE
+
+FE -> GW: POST /api/inventario/ajustes (con datos del ajuste)
+activate GW
+
+GW -> IS: Forward Request
+activate IS
+
+IS -> IS: Validar datos (ej: que la cantidad a restar exista en el lote)
+
+IS -> IS_DB: INSERT INTO ajustes_inventario
+activate IS_DB
+IS_DB --> IS: Confirmación de guardado
+deactivate IS_DB
+
+IS -> IS_DB: UPDATE lotes_insumos (restar de 'cantidad_restante')
+activate IS_DB
+IS_DB --> IS: Confirmación de actualización
+deactivate IS_DB
+
+IS -> IS_DB: UPDATE insumos (actualizar 'stock_total_calculado')
+activate IS_DB
+IS_DB --> IS: Confirmación de actualización
+deactivate IS_DB
+
+IS --> GW: 201 Created (Ajuste registrado)
+deactivate IS
+
+GW --> FE: 201 Created
+deactivate GW
+
+FE --> User: Muestra "Ajuste realizado"
+deactivate FE
+
+@enduml

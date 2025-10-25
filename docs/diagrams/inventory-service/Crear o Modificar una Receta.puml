@@ -1,0 +1,50 @@
+@startuml CrearOModificarReceta
+skinparam handwritten true
+skinparam sequence {
+    ArrowColor DarkBlue
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ParticipantBorderColor DarkBlue
+    ParticipantFontColor DarkBlue
+    LifeLineBorderColor DarkBlue
+    LifeLineBackgroundColor #LightYellow
+    NoteBackgroundColor #LightYellow
+    NoteBorderColor DarkBlue
+}
+
+title Secuencia F: Crear o Modificar una Receta
+
+autonumber "<b>[F.0]"
+
+actor "Usuario (Dueña)" as User
+participant "Frontend" as FE
+participant "API Gateway" as GW
+participant "Inventory Service" as IS
+database "Inventory DB" as IS_DB
+
+User -> FE: Selecciona un producto y define sus insumos
+activate FE
+
+FE -> GW: POST /api/inventario/recetas (con datos de la receta)
+activate GW
+
+GW -> IS: Forward Request
+activate IS
+
+IS -> IS: Validar que el producto y los insumos existen
+
+IS -> IS_DB: INSERT o UPDATE en la tabla 'recetas'
+activate IS_DB
+IS_DB --> IS: Confirmación de guardado
+deactivate IS_DB
+
+IS --> GW: 200 OK (Receta guardada)
+deactivate IS
+
+GW --> FE: 200 OK
+deactivate GW
+
+FE --> User: Muestra "Receta guardada correctamente"
+deactivate FE
+
+@enduml

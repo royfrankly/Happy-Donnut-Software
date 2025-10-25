@@ -1,0 +1,81 @@
+/* --- Estilos para la página de Login --- */
+.login-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #fdfaf6; /* Mismo fondo suave */
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.login-container {
+    background-color: #ffffff;
+    padding: 3em;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-container h1 {
+    color: #d95f02; /* Naranja oscuro */
+    font-size: 2.5em;
+    margin-bottom: 0.2em;
+}
+
+.login-container p {
+    color: #666;
+    margin-bottom: 2em;
+}
+
+#login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5em;
+}
+
+#login-form label {
+    display: none; /* Ocultamos las etiquetas para un look más limpio */
+}
+
+#login-form input {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 1em;
+    text-align: center;
+}
+
+#login-form input::placeholder {
+    color: #aaa;
+}
+
+#login-form input:focus {
+    outline: none;
+    border-color: #f59e0b; /* Naranja en el foco */
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+#login-form button {
+    background-color: #f97316; /* Naranja vibrante */
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+}
+
+#login-form button:hover {
+    background-color: #ea580c; /* Naranja más oscuro */
+}
+
+#login-form button:active {
+    transform: scale(0.98); /* Efecto al presionar */
+}

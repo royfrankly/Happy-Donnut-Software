@@ -11,7 +11,7 @@ return new class extends Migration
      */
 public function up(): void
 {
-    Schema::create('movimientos_inventario', function (Blueprint $table) {
+    Schema::create('movimientos_inventarios', function (Blueprint $table) {
         $table->id(); // ID único del movimiento
         $table->foreignId('lote_insumo_id')->constrained('lotes_insumos')->onDelete('cascade'); // A qué lote afectó
         $table->enum('tipo_movimiento', ['entrada', 'salida_manual', 'salida_venta']); // Tipo de movimiento
@@ -26,6 +26,6 @@ public function up(): void
      */
     public function down(): void
     {
-        Schema::dropIfExists('movimiento_inventarios');
+        Schema::dropIfExists('movimientos_inventarios');
     }
 };

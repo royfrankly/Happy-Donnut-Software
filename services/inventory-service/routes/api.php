@@ -5,23 +5,31 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\InsumoController;
-use App\Http\Controllers\LoteInsumoController; // Lo crearemos ahora
+use App\Http\Controllers\LoteInsumoController;
 use App\Http\Controllers\MovimientoInventarioController;
+use App\Http\Controllers\AuthController; // Importación añadida
 
-// Rutas para gestionar Categorías, Productos e Insumos (CRUDs básicos)
-Route::apiResource('categorias', CategoriaController::class);
-Route::apiResource('productos', ProductoController::class);
-Route::apiResource('insumos', InsumoController::class);
+// Ruta pública (no necesita token)
+Route::post('/login', [AuthController::class, 'login']);
 
-// Ruta principal para gestionar los lotes de insumos
-Route::apiResource('lotes-insumos', LoteInsumoController::class);
+// Rutas protegidas (requieren token de autenticación)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-// Ruta para registrar otros movimientos (como mermas o ajustes)
-Route::post('movimientos-inventario', [MovimientoInventarioController::class, 'store']);
+    // Rutas para gestionar Categorías, Productos e Insumos
+    Route::apiResource('categorias', CategoriaController::class);
+    Route::apiResource('productos', ProductoController::class);
+    Route::apiResource('insumos', InsumoController::class);
+    Route::apiResource('productos', ProductoController::class); // <-- AÑADIDO
 
-// Rutas para Movimientos de Inventario
-Route::post('/movimientos/salida', [MovimientoInventarioController::class, 'registrarSalida']);
+    // Ruta para gestionar los lotes de insumos
+    Route::apiResource('lotes-insumos', LoteInsumoController::class);
 
+    // Ruta para registrar movimientos de inventario
+    Route::get('movimientos-inventario', [MovimientoInventarioController::class, 'index']); // <-- AÑADIDO
+    Route::post('movimientos-inventario', [MovimientoInventarioController::class, 'store']);
+    Route::post('/movimientos/salida', [MovimientoInventarioController::class, 'registrarSalida']);
 
-// Ruta para consultar alertas de stock
-Route::get('/stock/alertas', [InsumoController::class, 'consultarAlertasDeStock']);
+    // Ruta para consultar alertas de stock
+    Route::get('/stock/alertas', [InsumoController::class, 'consultarAlertasDeStock']);
+});

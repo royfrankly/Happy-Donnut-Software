@@ -1,25 +1,68 @@
-# /docker/docker-compose.yml
+version: '3.8'
 
+networks:
+  happy_donuts_network:
+    driver: bridge
 
 services:
-  # Define el servicio de la base de datos para el inventario
+  # Laravel Application Service
+  inventory-service:
+    build:
+      context: ../services/inventory-service
+      dockerfile: Dockerfile
+    container_name: happy_donuts_inventory_service
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ../services/inventory-service:/var/www/html
+    environment:
+      - APP_NAME=Laravel
+      - APP_ENV=local
+      - APP_KEY=base64:mgWzVKKjF72liufiz4OGUg8XkvX/bYSNFEPaQXCK0C8=
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8080
+      - DB_CONNECTION=pgsql
+      - DB_HOST=inventory-db
+      - DB_PORT=5432
+      - DB_DATABASE=inventory_db
+      - DB_USERNAME=user_inventory
+      - DB_PASSWORD=119001
+    networks:
+      - happy_donuts_network
+    depends_on:
+      - inventory-db
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: happy_donuts_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ../services/inventory-service:/var/www/html
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - happy_donuts_network
+    depends_on:
+      - inventory-service
+
+  # PostgreSQL Database
   inventory-db:
-    image: postgres:13              # Usa la imagen oficial de PostgreSQL versión 13
-    container_name: happy_donuts_inventory_db # Nombre fácil de identificar para el contenedor
-    restart: always                 # Reinicia el contenedor automáticamente si se cae
-    environment:                    # Variables de entorno para configurar la base de datos
+    image: postgres:13
+    container_name: happy_donuts_inventory_db
+    restart: always
+    environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: user_inventory
       POSTGRES_PASSWORD: 119001
     ports:
-      # Mapea el puerto 5433 de tu máquina al 5432 del contenedor.
-      # Así evitas conflictos si ya tienes Postgres corriendo en el puerto 5432.
       - "5433:5432"
     volumes:
-      # 'Monta' un volumen para que los datos de la base de datos persistan
-      # incluso si eliminas el contenedor.
       - inventory_postgres_data:/var/lib/postgresql/data
+    networks:
+      - happy_donuts_network
 
 volumes:
-  # Declara el volumen que usaremos para persistir los datos
   inventory_postgres_data:
+    driver: local

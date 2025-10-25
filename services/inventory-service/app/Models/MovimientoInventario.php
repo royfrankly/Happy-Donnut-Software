@@ -9,7 +9,7 @@ class MovimientoInventario extends Model
 {
     use HasFactory;
 
-    protected $table = 'movimientos_inventario'; // <-- ¡ESTA ES LA LÍNEA QUE LO ARREGLA TODO!
+    protected $table = 'movimientos_inventarios';
 
     /**
      * The attributes that are mass assignable.
@@ -22,4 +22,12 @@ class MovimientoInventario extends Model
         'cantidad',
         'motivo',
     ];
+
+    /**
+     * Get the lot associated with the inventory movement.
+     */
+    public function loteInsumo()
+    {
+        return $this->belongsTo(LoteInsumo::class, 'lote_insumo_id');
+    }
 }

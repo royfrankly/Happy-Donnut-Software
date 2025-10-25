@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\LoteInsumo;
-use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -16,26 +14,21 @@ class LoteInsumoController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        $lotes = LoteInsumo::with('insumo')->latest()->get();
+        return response()->json($lotes);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-public function store(Request $request)
+    public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'insumo_id' => 'required|exists:insumos,id',
             'cantidad_inicial' => 'required|numeric|min:0.01',
             'fecha_vencimiento' => 'nullable|date',
+            'precio_compra_unitario' => 'required|numeric|min:0',
+            'descripcion' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -51,8 +44,11 @@ public function store(Request $request)
                     'cantidad_inicial' => $datos['cantidad_inicial'],
                     'cantidad_restante' => $datos['cantidad_inicial'],
                     'fecha_vencimiento' => $datos['fecha_vencimiento'] ?? null,
+                    'precio_compra_unitario' => $datos['precio_compra_unitario'],
+                    'descripcion' => $datos['descripcion'] ?? null,
                 ]);
 
+                // This uses the relationship defined in the model, which is cleaner
                 $nuevoLote->movimientos()->create([
                     'tipo_movimiento' => 'entrada',
                     'cantidad' => $datos['cantidad_inicial'],
@@ -74,15 +70,7 @@ public function store(Request $request)
      */
     public function show(LoteInsumo $loteInsumo)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(LoteInsumo $loteInsumo)
-    {
-        //
+        return response()->json($loteInsumo->load('insumo'));
     }
 
     /**
@@ -90,7 +78,18 @@ public function store(Request $request)
      */
     public function update(Request $request, LoteInsumo $loteInsumo)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'fecha_vencimiento' => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Only update the expiration date
+        $loteInsumo->update($validator->validated());
+
+        return response()->json($loteInsumo);
     }
 
     /**
@@ -98,6 +97,13 @@ public function store(Request $request)
      */
     public function destroy(LoteInsumo $loteInsumo)
     {
-        //
+        // Safety check: only allow deleting a lot if no part of it has been used.
+        if ($loteInsumo->cantidad_restante < $loteInsumo->cantidad_inicial) {
+            return response()->json(['error' => 'No se puede eliminar un lote que ya ha sido utilizado.'], 422);
+        }
+
+        $loteInsumo->delete();
+
+        return response()->json(null, 204);
     }
 }

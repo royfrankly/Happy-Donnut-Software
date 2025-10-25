@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class CategoriaController extends Controller
 {
@@ -13,7 +12,15 @@ class CategoriaController extends Controller
      */
     public function index()
     {
-        return response()->json(Categoria::all());
+        //
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
     }
 
     /**
@@ -21,18 +28,7 @@ class CategoriaController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:255|unique:categorias',
-            'descripcion' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $categoria = Categoria::create($validator->validated());
-
-        return response()->json($categoria, 201);
+        //
     }
 
     /**
@@ -40,8 +36,15 @@ class CategoriaController extends Controller
      */
     public function show(Categoria $categoria)
     {
-        // Optionally, load the products associated with this category
-        return response()->json($categoria->load('productos'));
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Categoria $categoria)
+    {
+        //
     }
 
     /**
@@ -49,18 +52,7 @@ class CategoriaController extends Controller
      */
     public function update(Request $request, Categoria $categoria)
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'sometimes|required|string|max:255|unique:categorias,nombre,' . $categoria->id,
-            'descripcion' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $categoria->update($validator->validated());
-
-        return response()->json($categoria);
+        //
     }
 
     /**
@@ -68,7 +60,6 @@ class CategoriaController extends Controller
      */
     public function destroy(Categoria $categoria)
     {
-        $categoria->delete();
-        return response()->json(null, 204);
+        //
     }
 }

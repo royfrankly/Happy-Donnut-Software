@@ -25,6 +25,6 @@ public function up(): void
      */
     public function down(): void
     {
-        Schema::dropIfExists('lotes_insumos');
+        Schema::dropIfExists('lote_insumos');
     }
 };

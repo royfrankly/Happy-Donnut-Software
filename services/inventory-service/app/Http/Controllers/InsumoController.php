@@ -2,51 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Insumo;
+use App\Http\Controllers\Controller;
+use App\Models\Insumo; // Para poder usar el modelo Insumo
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class InsumoController extends Controller
 {
     /**
-     * Display a listing of the resource with their total stock.
+     * Display a listing of the resource.
      */
-    public function index()
+public function index()
+{
+    // Carga todos los insumos y, para cada uno,
+    // crea un nuevo campo virtual llamado 'stock_total'
+    // que es la suma de la 'cantidad_restante' de todos sus lotes.
+    $insumos = Insumo::withSum('lotes', 'cantidad_restante')->get();
+
+    return response()->json($insumos);
+}
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
     {
-        // Eager load the sum of 'cantidad_restante' from the 'lotes' relationship
-        $insumos = Insumo::withSum('lotes', 'cantidad_restante')->get();
-        return response()->json($insumos);
+        //
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|unique:insumos|max:255',
-            'descripcion' => 'nullable|string',
-            'unidad_medida' => 'required|string|max:50',
-            'stock_minimo_alerta' => 'required|numeric|min:0',
-        ]);
+ public function store(Request $request)
+{
+    // Primero, validamos que los datos que llegan son correctos
+    $validator = Validator::make($request->all(), [
+        'nombre' => 'required|string|unique:insumos|max:255',
+        'unidad_medida' => 'required|string|max:50',
+        'stock_minimo_alerta' => 'required|numeric|min:0',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $insumo = Insumo::create($validator->validated());
-
-        return response()->json($insumo, 201);
+    // Si la validación falla, devolvemos un error 422 con los detalles
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
 
+    // Si todo está bien, creamos el insumo en la base de datos
+    $insumo = Insumo::create($validator->validated());
+
+    // Finalmente, devolvemos una respuesta JSON con el insumo creado
+    // y el código de estado correcto '201 Created'
+    return response()->json($insumo, 201);
+}
+
     /**
-     * Display the specified resource with its total stock.
+     * Display the specified resource.
      */
     public function show(Insumo $insumo)
     {
-        // Load the sum of stock for the specific insumo
-        $insumo->loadSum('lotes', 'cantidad_restante');
-        return response()->json($insumo);
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Insumo $insumo)
+    {
+        //
     }
 
     /**
@@ -54,20 +77,7 @@ class InsumoController extends Controller
      */
     public function update(Request $request, Insumo $insumo)
     {
-        $validator = Validator::make($request->all(), [
-            'nombre' => 'sometimes|required|string|max:255|unique:insumos,nombre,' . $insumo->id,
-            'descripcion' => 'nullable|string',
-            'unidad_medida' => 'sometimes|required|string|max:50',
-            'stock_minimo_alerta' => 'sometimes|required|numeric|min:0',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $insumo->update($validator->validated());
-
-        return response()->json($insumo);
+        //
     }
 
     /**
@@ -75,37 +85,23 @@ class InsumoController extends Controller
      */
     public function destroy(Insumo $insumo)
     {
-        $insumo->delete();
-        return response()->json(null, 204);
+        //
     }
 
-    /**
-     * Check for insumos with low stock.
-     */
     public function consultarAlertasDeStock()
-    {
-        // Get all insumos with their total stock in one query
-        $insumos = Insumo::withSum('lotes', 'cantidad_restante')->get();
+{
+    // Esta consulta es más avanzada:
+    // 1. Suma el stock total de cada insumo (como antes).
+    // 2. Utiliza 'having' para filtrar y devolver solo aquellos
+    //    cuya suma de stock sea MENOR que su propio campo 'stock_minimo_alerta'.
+    $insumosConAlerta = Insumo::withSum('lotes', 'cantidad_restante')
+        ->having(DB::raw('lotes_sum_cantidad_restante'), '<', DB::raw('stock_minimo_alerta'))
+        ->get();
 
-        // Filter the collection in PHP, which is much faster
-        $alertas = $insumos->filter(function ($insumo) {
-            // The sum is available as 'lotes_sum_cantidad_restante'
-            return $insumo->lotes_sum_cantidad_restante <= $insumo->stock_minimo_alerta;
-        })->map(function ($insumo) {
-            // Format the output as desired
-            return [
-                'insumo_id' => $insumo->id,
-                'nombre' => $insumo->nombre,
-                'stock_actual' => $insumo->lotes_sum_cantidad_restante ?? 0,
-                'stock_minimo_alerta' => $insumo->stock_minimo_alerta,
-            ];
-        });
-
-        if ($alertas->isEmpty()) {
-            return response()->json(['message' => 'No hay alertas de stock.'], 200);
-        }
-
-        // Return the values of the collection to get a simple array
-        return response()->json($alertas->values());
+    if ($insumosConAlerta->isEmpty()) {
+        return response()->json(['message' => 'No hay alertas de stock.'], 200);
     }
+
+    return response()->json($insumosConAlerta);
+}
 }

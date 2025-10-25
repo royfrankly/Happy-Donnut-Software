@@ -17,7 +17,6 @@ public function up(): void
         $table->text('descripcion')->nullable(); // Descripción opcional
         $table->string('unidad_medida'); // ej. "kg", "litro", "unidad"
         $table->decimal('stock_minimo_alerta', 10, 2); // Umbral para alertas
-        $table->softDeletes(); // <-- AÑADIDO PARA BORRADO LÓGICO
         $table->timestamps(); // Campos created_at y updated_at
     });
 }

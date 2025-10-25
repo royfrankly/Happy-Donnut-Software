@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Insumo;
 use App\Models\LoteInsumo;
 use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
@@ -11,33 +12,15 @@ use Illuminate\Support\Facades\Validator;
 class MovimientoInventarioController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
-        $limit = $request->query('limit');
-
-        $query = MovimientoInventario::with('loteInsumo.insumo')->latest();
-
-        if (is_numeric($limit) && $limit > 0) {
-            $query->take($limit);
-        }
-
-        $movimientos = $query->get();
-
-        return response()->json($movimientos);
-    }
-
-    /**
-     * Registers an inventory outflow (consumption) using a FEFO (First-Expired, First-Out) strategy,
-     * consuming from multiple lots if necessary.
+     * Registra una salida de inventario (consumo) siguiendo el método FIFO.
      */
     public function registrarSalida(Request $request)
     {
+        // 1. Validar los datos de entrada
         $validator = Validator::make($request->all(), [
             'insumo_id' => 'required|integer|exists:insumos,id',
             'cantidad' => 'required|numeric|min:0.01',
-            'motivo' => 'required|string|max:255',
+            'motivo' => 'required|string', // Ej: "Producción de donas", "Merma"
         ]);
 
         if ($validator->fails()) {
@@ -49,56 +32,40 @@ class MovimientoInventarioController extends Controller
         $cantidadAConsumir = $datos['cantidad'];
 
         try {
-            $resultado = DB::transaction(function () use ($insumoId, $cantidadAConsumir, $datos) {
+            // 2. Iniciar una transacción para garantizar la consistencia de los datos
+            DB::transaction(function () use ($insumoId, $cantidadAConsumir, $datos) {
 
-                // 1. Check total available stock first to fail early
-                $stockTotal = LoteInsumo::where('insumo_id', $insumoId)->sum('cantidad_restante');
-                if ($stockTotal < $cantidadAConsumir) {
+                // 3. Buscar el lote más antiguo (FIFO) con stock disponible para ese insumo
+                $lote = LoteInsumo::where('insumo_id', $insumoId)
+                                ->where('cantidad_restante', '>', 0)
+                                ->orderBy('created_at', 'asc') // El más antiguo primero
+                                ->lockForUpdate() // Bloquea la fila para evitar que dos procesos la usen a la vez
+                                ->first();
+
+                // 4. Verificar si hay stock suficiente en el lote encontrado
+                if (!$lote || $lote->cantidad_restante < $cantidadAConsumir) {
+                    // Si no hay lote o no hay suficiente stock, cancela la operación
                     throw new \Exception('Stock insuficiente para el insumo solicitado.');
                 }
 
-                // 2. Get available lots, ordered by expiration date (FEFO). Lots without an expiration date go last.
-                $lotesDisponibles = LoteInsumo::where('insumo_id', $insumoId)
-                    ->where('cantidad_restante', '>', 0)
-                    ->orderByRaw('fecha_vencimiento ASC NULLS LAST')
-                    ->lockForUpdate() // Lock rows to prevent race conditions
-                    ->get();
+                // 5. Actualizar la cantidad restante del lote
+                $lote->cantidad_restante -= $cantidadAConsumir;
+                $lote->save();
 
-                $cantidadPendiente = $cantidadAConsumir;
-                $movimientosCreados = [];
-
-                // 3. Iterate through lots and consume stock
-                foreach ($lotesDisponibles as $lote) {
-                    if ($cantidadPendiente <= 0) {
-                        break; // We have fulfilled the request
-                    }
-
-                    $cantidadADescontar = min($lote->cantidad_restante, $cantidadPendiente);
-
-                    // 4. Decrement stock from the current lot
-                    $lote->decrement('cantidad_restante', $cantidadADescontar);
-
-                    // 5. Record the specific movement for this lot
-                    $movimientosCreados[] = MovimientoInventario::create([
-                        'lote_insumo_id' => $lote->id,
-                        'tipo_movimiento' => 'salida_venta', // Or another type based on request
-                        'cantidad' => $cantidadADescontar,
-                        'motivo' => $datos['motivo'],
-                    ]);
-
-                    $cantidadPendiente -= $cantidadADescontar;
-                }
-
-                return $movimientosCreados;
+                // 6. Registrar el movimiento de salida
+                MovimientoInventario::create([
+                    'lote_insumo_id' => $lote->id,
+                    'tipo_movimiento' => 'salida_venta',
+                    'cantidad' => $cantidadAConsumir,
+                    'motivo' => $datos['motivo'],
+                ]);
             });
 
-            return response()->json([
-                'message' => 'Salida de inventario registrada con éxito.',
-                'movimientos' => $resultado
-            ], 200);
+            return response()->json(['message' => 'Salida de inventario registrada con éxito.'], 200);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 422); // 422 is more appropriate for validation/logic errors
+            // Si algo falla (como el stock insuficiente), devuelve un error
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 }

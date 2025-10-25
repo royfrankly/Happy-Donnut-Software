@@ -17,9 +17,6 @@ public function up(): void
         $table->string('nombre_producto')->unique(); // Nombre del producto (ej. "Dona de Chocolate")
         $table->text('descripcion')->nullable(); // Descripción opcional
         $table->decimal('precio_base', 10, 2); // Precio de venta
-        $table->enum('tipo', ['preparado', 'reventa'])->default('preparado'); // Distingue productos preparados de los de reventa
-        $table->integer('stock')->nullable(); // Stock para productos de reventa, nulo para preparados
-        $table->softDeletes(); // Para borrado lógico
         $table->timestamps(); // Campos created_at y updated_at
     });
 }

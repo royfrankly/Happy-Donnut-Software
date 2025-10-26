@@ -6,18 +6,20 @@ WORKDIR /var/www
 # Instalar dependencias del sistema y extensiones PHP (igual que antes)
 RUN apt-get update && apt-get install -y \
     git curl libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev zip unzip \
+    netcat-traditional \
     && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Copiar el código de la aplicación
+COPY . .
+
 # Copiar archivos composer e instalar dependencias PHP
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
 
-# Copiar el código de la aplicación
-COPY . .
 
 # Generar autoloader optimizado
 RUN composer dump-autoload --optimize

@@ -1,51 +1,130 @@
-version: '3.8'
+
 
 services:
-  # --- INFRASTRUCTURE SERVICES ---
 
-  db:
+  # -----------------------------------------------------------------
+  # 1. SERVIDORES DE BASE DE DATOS DEDICADOS (1 por Microservicio)
+  # -----------------------------------------------------------------
+
+  db-auth:
     image: postgres:18-alpine
-    container_name: happydonut-db
+    container_name: happydonut-db-auth
     restart: unless-stopped
-    ports:
-      - "5432:5432"
+    # Nota: No mapeamos puertos para evitar conflictos; la comunicación es interna.
     volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d # <--- AÑADIDO PARA INICIALIZAR LA DB
-    env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
+      - db-auth-data:/var/lib/postgresql/data # Volumen dedicado
+    env_file:
       - ./.env
-    environment: # <--- USA LAS VARIABLES DEL .env
-      - POSTGRES_DB=happydonut_db # Puedes mantener una DB por defecto si quieres
+    environment:
+      - POSTGRES_DB=auth_db
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
       - happydonut-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-happydonut_db}"] # Usa la variable o un valor por defecto
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d auth_db"]
+      interval: 5s
       timeout: 5s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    container_name: happydonut-rabbitmq
+  db-product:
+    image: postgres:18-alpine
+    container_name: happydonut-db-product
     restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
-      - ./.env
-    environment: # <--- USA LAS VARIABLES DEL .env
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
     volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+      - db-product-data:/var/lib/postgresql/data # Volumen dedicado
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=product_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
       - happydonut-net
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d product_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-inventory:
+    image: postgres:18-alpine
+    container_name: happydonut-db-inventory
+    restart: unless-stopped
+    volumes:
+      - db-inventory-data:/var/lib/postgresql/data # Volumen dedicado
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=inventory_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - happydonut-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d inventory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-order:
+    image: postgres:18-alpine
+    container_name: happydonut-db-order
+    restart: unless-stopped
+    volumes:
+      - db-order-data:/var/lib/postgresql/data # Volumen dedicado
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=order_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - happydonut-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d order_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-email:
+    image: postgres:18-alpine
+    container_name: happydonut-db-email
+    restart: unless-stopped
+    volumes:
+      - db-email-data:/var/lib/postgresql/data # Volumen dedicado
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=email_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - happydonut-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d email_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-apigateway:
+    image: postgres:18-alpine
+    container_name: happydonut-db-apigateway
+    restart: unless-stopped
+    volumes:
+      - db-apigateway-data:/var/lib/postgresql/data # Volumen dedicado
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=apigateway_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - happydonut-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d apigateway_db"]
+      interval: 5s
+      timeout: 5s
       retries: 5
 
   # --- APPLICATION SERVICES (Microservices) ---
@@ -72,17 +151,20 @@ services:
       dockerfile: Dockerfile
     container_name: api-gateway-app
     restart: unless-stopped
+    ports:
+      - "8000:8000"  
     volumes:
       - ./apigateway:/var/www
+      # /var/www/vendor # <--- OJO EN CASO LO NECESIES, SINO QUITALO 
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env
       - APP_ENV=local  # Cambiado a local para desarrollo
       - APP_DEBUG=true # Cambiado a true para desarrollo
       - DB_CONNECTION=pgsql
-      - DB_HOST=db
+      - DB_HOST=db-apigateway
       - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME_API_GATEWAY} # Base de datos específica
+      - DB_DATABASE=apigateway_db # Base de datos específica
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_DRIVER=file # O redis si lo configuras
@@ -94,7 +176,7 @@ services:
     networks:
       - happydonut-net
     depends_on:
-      db:
+      db-apigateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "php-fpm", "-t"]
@@ -111,22 +193,23 @@ services:
     restart: unless-stopped
     volumes:
       - ./auth_service:/var/www
+      - /var/www/vendor
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env
       - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=pgsql
-      - DB_HOST=db
+      - DB_HOST=db-auth
       - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME_AUTH} # Base de datos específica
+      - DB_DATABASE=auth_db 
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_DRIVER=file
     networks:
       - happydonut-net
     depends_on:
-      db:
+      db-auth:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "php-fpm", "-t"]
@@ -143,22 +226,23 @@ services:
     restart: unless-stopped
     volumes:
       - ./product_service:/var/www
+      - /var/www/vendor
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env
       - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=pgsql
-      - DB_HOST=db
+      - DB_HOST=db-product
       - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME_PRODUCT} # Base de datos específica
+      - DB_DATABASE=product_db # Base de datos específica
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_DRIVER=file
     networks:
       - happydonut-net
     depends_on:
-      db:
+      db-product:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "php-fpm", "-t"]
@@ -175,22 +259,23 @@ services:
     restart: unless-stopped
     volumes:
       - ./inventory_service:/var/www
+      - /var/www/vendor
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env
       - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=pgsql
-      - DB_HOST=db
+      - DB_HOST=db-inventory
       - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME_INVENTORY} # Base de datos específica
+      - DB_DATABASE=inventory_db # Base de datos específica
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_DRIVER=file
     networks:
       - happydonut-net
     depends_on:
-      db:
+      db-inventory:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "php-fpm", "-t"]
@@ -207,15 +292,16 @@ services:
     restart: unless-stopped
     volumes:
       - ./order_service:/var/www
+      - /var/www/vendor
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env
       - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=pgsql
-      - DB_HOST=db
+      - DB_HOST=db-order
       - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME_ORDER} # Base de datos específica
+      - DB_DATABASE=order_db
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_DRIVER=file
@@ -227,9 +313,7 @@ services:
     networks:
       - happydonut-net
     depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
+      db-order:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "php-fpm", "-t"]
@@ -246,15 +330,16 @@ services:
     restart: unless-stopped
     volumes:
       - ./email_service:/var/www
+      - /var/www/vendor
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env
       - APP_ENV=local
       - APP_DEBUG=true
       - DB_CONNECTION=pgsql # Asumiendo que necesita DB para logs
-      - DB_HOST=db
+      - DB_HOST=db-email
       - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME_EMAIL} # Base de datos específica
+      - DB_DATABASE=email_db
       - DB_USERNAME=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - CACHE_DRIVER=file
@@ -266,7 +351,7 @@ services:
     networks:
       - happydonut-net
     depends_on:
-      rabbitmq:
+      db-email:
         condition: service_healthy
       # db: # Descomentar si realmente usa la DB
       #  condition: service_healthy
@@ -279,7 +364,12 @@ services:
 # --- VOLUMES AND NETWORKS ---
 
 volumes:
-  db-data:
+  db-auth-data: 
+  db-product-data:
+  db-inventory-data:
+  db-order-data:
+  db-email-data:
+  db-apigateway-data:
   rabbitmq-data:
 
 networks:

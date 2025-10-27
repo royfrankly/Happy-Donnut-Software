@@ -1,31 +1,42 @@
 #!/bin/sh
 set -e
 
-# Obtiene la variable del host de la base de datos (DB_HOST) del entorno Laravel
-DB_HOST=${DB_HOST:-db}  # Usa 'db' como fallback si no se encuentra
-DB_PORT=${DB_PORT:-5432} # Obtiene el puerto (5432)
+# 1. MANEJO DE VARIABLES DE ENTORNO
+# Las variables son leídas por el shell automáticamente desde Docker Compose,
+# pero se recomienda inicializar con un fallback seguro (p. ej., si se ejecuta solo).
+# Nota: La variable APP_KEY debe estar vacía en el .env.example para que funcione.
+DB_HOST=${DB_HOST:-db}
+DB_PORT=${DB_PORT:-5432}
 
-# Espera a que el servidor de base de datos específico (db-auth, db-product, etc.) esté listo
+# 2. ASEGURAR ARCHIVO .ENV (DEBE IR ANTES DE CUALQUIER COMANDO ARTISAN)
+# Esto resuelve el error "Failed to open stream: No such file or directory"
+if [ ! -f /var/www/.env ]; then
+  echo "Creating .env file from .env.example..."
+  cp /var/www/.env.example /var/www/.env
+fi
+
+# 3. ESPERAR A LA BASE DE DATOS (DEBE IR ANTES DE ARTISAN QUE SE CONECTA A LA DB)
 echo "Waiting for database at $DB_HOST:$DB_PORT..."
-# Ahora usa la variable DB_HOST en lugar del nombre fijo 'db'
 while ! nc -z $DB_HOST $DB_PORT; do
   sleep 1
 done
 echo "Database $DB_HOST is ready."
 
-#Ejecuta la generacion de key
-echo "Generating application key..."
-php artisan key:generate --env=production
+# 4. GENERAR APP_KEY (AHORA SÍ PUEDE ACCEDER A LA DB SI ES NECESARIO)
+# Solo generamos la clave si la línea APP_KEY no contiene una clave (base64).
+if ! grep -q "APP_KEY=base64:" /var/www/.env; then
+  echo "Generating application key..."
+  # Usar un simple key:generate es suficiente, se basa en el .env que ya creamos.
+  php artisan key:generate
+fi
 
-# Ejecuta las migraciones automáticamente
+# 5. EJECUTAR MIGRACIONES
+# Usamos 'php artisan migrate --force' para entornos no interactivos.
+# El env=production es opcional si ya está en .env, pero lo mantenemos si lo necesitas.
 echo "Running migrations..."
-# Agrega env:production para asegurar que se usen las variables de entorno correctas.
-php artisan migrate --force --env=production
+php artisan migrate --force
 
-# Opcional: Ejecutar seeders si es necesario
-# echo "Running seeders..."
-# php artisan db:seed --force
-
-# Inicia el proceso principal (PHP-FPM)
+# 6. INICIAR EL PROCESO PRINCIPAL
 echo "Starting PHP-FPM..."
+# El exec reemplaza el proceso shell por el proceso php-fpm, asegurando un PID 1 correcto.
 exec php-fpm

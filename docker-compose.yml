@@ -155,7 +155,7 @@ services:
       - "8000:8000"  
     volumes:
       - ./apigateway:/var/www
-      # /var/www/vendor # <--- OJO EN CASO LO NECESIES, SINO QUITALO 
+      - /var/www/vendor # <--- OJO EN CASO LO NECESIES, SINO QUITALO
     env_file:    # <--- LEE EL ARCHIVO .env DE LA RAÍZ
       - ./.env
     environment: # <--- USA LAS VARIABLES DEL .env

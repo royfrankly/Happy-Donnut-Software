@@ -13,13 +13,13 @@ RUN apt-get update && apt-get install -y \
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copiar el código de la aplicación
-COPY . .
 
 # Copiar archivos composer e instalar dependencias PHP
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --no-scripts --optimize-autoloader
 
+# Copiar el código de la aplicación
+COPY . .
 
 # Generar autoloader optimizado
 RUN composer dump-autoload --optimize

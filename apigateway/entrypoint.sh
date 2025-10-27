@@ -13,6 +13,10 @@ while ! nc -z $DB_HOST $DB_PORT; do
 done
 echo "Database $DB_HOST is ready."
 
+#Ejecuta la generacion de key
+echo "Generating application key..."
+php artisan key:generate --env=production
+
 # Ejecuta las migraciones automáticamente
 echo "Running migrations..."
 # Agrega env:production para asegurar que se usen las variables de entorno correctas.

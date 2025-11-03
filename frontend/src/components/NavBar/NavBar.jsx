@@ -5,7 +5,10 @@ import './NavBar.css';
 
 function NavBar() {
   return (
-   
+    <div className="nav-container">
+      <div className="nav-content">
+
+      
         <div className="nav__logo">
         <a href="/">
           <img src={coffeeBeansLogo} alt="Logo de Granos de café"
@@ -13,6 +16,29 @@ function NavBar() {
           />
         </a>
       </div>
+
+      <div className="nav_center-group">
+        <div className="nav__links">
+            <a href="/products" className="nav__link">Products</a>
+            <a href="/about" className="nav__link">About</a>
+            <a href="/testimonial" className="nav__link">Testimonial</a>
+            <a href="/contact" className="nav__link">Contact</a>
+        </div>
+      </div>
+        
+      <div className="nav__icons-right">
+                    
+          <div className="nav__icon-box">
+              <i className="fas fa-search"></i>
+          </div>
+        
+          <div className="nav__icon-box">
+              <i className="fas fa-user"></i>
+          </div>
+      </div>
+      </div>
+    </div>
+      
      
   );
 }

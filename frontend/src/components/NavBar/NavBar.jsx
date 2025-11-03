@@ -1,24 +1,19 @@
-// src/components/NavBar.jsx
-
+// src/components/NavBar.jsx (o donde tengas tu componente de navegación)
 import React from 'react';
-import '../pages/Home.css'; 
-// 1. IMPORTA la imagen como un módulo (Ajusta la ruta si es diferente)
-import coffeeBeansLogo from '../assets/coffee-beans.png'; 
+import coffeeBeansLogo from '../../assets/coffee-beans.png'; 
+import './NavBar.css';
 
 function NavBar() {
   return (
-    <nav className="nav-container">
-      
-      <div className="nav__logo">
-        <img 
-          // 2. USA la variable JavaScript importada
-          src={coffeeBeansLogo} 
-          alt="Logo de Granos de Café" 
-          className="nav__logo-img" 
-        />
+   
+        <div className="nav__logo">
+        <a href="/">
+          <img src={coffeeBeansLogo} alt="Logo de Granos de café"
+            className="nav__logo-img"
+          />
+        </a>
       </div>
-      {/* ... (resto del código) ... */}
-    </nav>
+     
   );
 }
 

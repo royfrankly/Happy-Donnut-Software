@@ -17,7 +17,7 @@
     justify-content:space-between;
     display:flex;
     align-items: center;
-    max-width: 1300px; /* Limita el ancho de la barra roja */
+    max-width: 1300px; 
     width: 100%;
    
 }

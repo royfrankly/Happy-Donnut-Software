@@ -19,10 +19,10 @@ function NavBar() {
 
       <div className="nav_center-group">
         <div className="nav__links">
-            <a href="/products" className="nav__link">Products</a>
-            <a href="/about" className="nav__link">About</a>
-            <a href="/testimonial" className="nav__link">Testimonial</a>
-            <a href="/contact" className="nav__link">Contact</a>
+            <a href="/products" className="nav__link">Productos</a>
+            <a href="/about" className="nav__link">Acerca de</a>
+            <a href="/testimonial" className="nav__link">Testimonio</a>
+            <a href="/contact" className="nav__link">Contacto</a>
         </div>
       </div>
         

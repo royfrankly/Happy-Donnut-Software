@@ -8,6 +8,7 @@ import './Home.css';
 import NavBar from '../components/NavBar/NavBar';
 import HeroSection from '../components/HeroSection/HeroSection';
 import GalleryItem from '../components/GalleryItem/GalleryItem';
+import StatsSection from '../components/StatsSection/StatsSection';
 // ------------------------------------
 
 function Home() {
@@ -18,6 +19,7 @@ function Home() {
                 <NavBar />
                 <HeroSection />
                 <GalleryItem />
+                <StatsSection />
             </div>
                
         </div>

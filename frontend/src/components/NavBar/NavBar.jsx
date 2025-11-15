@@ -1,6 +1,7 @@
 // src/components/NavBar.jsx (o donde tengas tu componente de navegación)
 import React from 'react';
-import coffeeBeansLogo from '../../assets/coffee-beans.png'; 
+import coffeeBeansLogo from '../../assets/coffee-beans.png';
+import { Link } from 'react-router-dom'; 
 import './NavBar.css';
 
 function NavBar() {
@@ -10,19 +11,19 @@ function NavBar() {
 
       
         <div className="nav__logo">
-        <a href="/">
+        <Link to="/login"> {/* <--- Usar Link para el logo */}
           <img src={coffeeBeansLogo} alt="Logo de Granos de café"
-            className="nav__logo-img"
+          className="nav__logo-img"
           />
-        </a>
+      </Link>
       </div>
 
       <div className="nav_center-group">
         <div className="nav__links">
-            <a href="/products" className="nav__link">Productos</a>
-            <a href="/about" className="nav__link">Acerca de</a>
-            <a href="/testimonial" className="nav__link">Testimonio</a>
-            <a href="/contact" className="nav__link">Contacto</a>
+          <Link to="/products" className="nav__link">Productos</Link>
+            <Link to="/about" className="nav__link">Acerca de</Link>
+            <Link to="/testimonial" className="nav__link">Testimonio</Link>
+            <Link to="/contact" className="nav__link">Contacto</Link>
         </div>
       </div>
         
@@ -33,7 +34,12 @@ function NavBar() {
           </div>
         
           <div className="nav__icon-box">
-              <i className="fas fa-user"></i>
+            <Link to="/login"> {}
+                  <i className="fas fa-user">
+                
+              </i> 
+             </Link>
+              
           </div>
       </div>
       </div>

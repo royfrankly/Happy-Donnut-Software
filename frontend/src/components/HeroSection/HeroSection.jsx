@@ -16,7 +16,7 @@ function HeroSection() {
                     donde tus experiencias son perfectas con relajación y sabores intensos.
                 </p>
       
-                <a href="/productos" className="hero-cta-button">
+                <a href="/products" className="hero-cta-button">
                         EXPLORAR PRODUCTOS
                 </a>      
       </div>

@@ -34,7 +34,7 @@ function NavBar() {
           </div>
         
           <div className="nav__icon-box">
-            <Link to="/login"> {}
+            <Link to="/login"> 
                   <i className="fas fa-user">
                 
               </i> 

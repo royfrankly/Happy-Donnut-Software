@@ -1,6 +1,6 @@
 
 import React from 'react';
-
+import { Link } from 'react-router-dom'; 
 import './StatsSection.css';
 
 function StatsSection() {
@@ -15,11 +15,12 @@ function StatsSection() {
                 <h2 className="content-title">
                     LA MAGIA DEL CAFÉ DISEÑADO POR TI
                 </h2>
-
+                
+                <Link to="/products"> 
                 <button className="cta-button">
                     EXPLORAR PRODUCTOS <span className="arrow"></span>
                 </button>
-
+                </Link>
             </div>
         </div>
 

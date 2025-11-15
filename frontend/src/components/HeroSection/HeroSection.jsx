@@ -2,7 +2,7 @@
 import React from 'react';
 
 import './HeroSection.css';
-
+import { Link } from 'react-router-dom'; 
 function HeroSection() {
   return (
     <div className="hero-section">
@@ -16,9 +16,10 @@ function HeroSection() {
                     donde tus experiencias son perfectas con relajación y sabores intensos.
                 </p>
       
-                <a href="/products" className="hero-cta-button">
-                        EXPLORAR PRODUCTOS
-                </a>      
+                <Link to="/products" className="hero-cta-button">
+                      EXPLORAR PRODUCTOS
+                </Link>
+                    
       </div>
     </div>
       

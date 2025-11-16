@@ -32,7 +32,7 @@ const OrderSummary = ({ subtotal = 0, discount = 0, total = 0, itemsCount, produ
         <strong>S/ {Number(total).toFixed(2)}</strong>
       </div>
 
-      {/* Información extra como el descuento con Falabella */}
+      {/* Información extra como el descuento */}
       <div className="falabella-info">
         <p>Total con Falabella: <span className="falabella-price">S/ {Number(total - 0.90).toFixed(2)}</span></p>
       </div>
@@ -44,10 +44,10 @@ const OrderSummary = ({ subtotal = 0, discount = 0, total = 0, itemsCount, produ
         </div>
       )}
 
-      {/* Botón de Pago (el objetivo final) */}
+      {/* Botón de Pago */}
       <button className="checkout-button">
         Continuar compra
-      </button>
+      </button> 
     </div>
   );
 };

@@ -1,9 +1,9 @@
-// src/components/checkout/OrderSummary.jsx
+
 
 import React from 'react';
 
 const OrderSummary = ({ subtotal = 0, discount = 0, total = 0, itemsCount, products, paymentMethod }) => {
-  // Determina el conteo de productos seleccionados: preferir itemsCount, si no, calcular de products
+  // OPNCINAL Determina el conteo de productos seleccionados: preferir itemsCount, si no, calcular de products
   const count = typeof itemsCount === 'number'
     ? itemsCount
     : Array.isArray(products)

@@ -41,7 +41,15 @@ function NavBar() {
              </Link>
               
           </div>
+          <div className="nav__icon-box">
+            <Link to="/cart">
+              <i className="fas fa-shopping-cart"></i>
+            </Link>
+          </div>
+          
+          
       </div>
+
       </div>
     </div>
       

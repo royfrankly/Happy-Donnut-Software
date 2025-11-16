@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MenuPage from './pages/MenuPage.jsx';
+import ShoppingCartPage from './pages/ShoppingCartPage.jsx';
 // Importa las demás páginas que necesites
 // import VentasPage from './pages/ventas.jsx'; 
 // Asumiremos que necesitas una página de 'Registro'
@@ -29,7 +30,7 @@ function App() {
         {/* Rutas de Autenticación (Login e Íconos de NavBar) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterForm />} />
-        
+        <Route path="/cart" element={<ShoppingCartPage />} />
 
       </Routes>
     </BrowserRouter>

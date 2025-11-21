@@ -7,33 +7,13 @@ use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Database\QueryException;
 
 class MovimientoInventarioController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function registrarEntrada(Request $request)
     {
-        $limit = $request->query('limit');
-
-        $query = MovimientoInventario::with('loteInsumo.insumo')->latest();
-
-        if (is_numeric($limit) && $limit > 0) {
-            $query->take($limit);
-        }
-
-        $movimientos = $query->get();
-
-        return response()->json($movimientos);
-    }
-
-    /**
-     * Registers an inventory outflow (consumption) using a FEFO (First-Expired, First-Out) strategy,
-     * consuming from multiple lots if necessary.
-     */
-    public function registrarSalida(Request $request)
-    {
+        // === PROGRAMACIÓN DEFENSIVA: validación de frontera ===
         $validator = Validator::make($request->all(), [
             'insumo_id' => 'required|integer|exists:insumos,id',
             'cantidad' => 'required|numeric|min:0.01',
@@ -41,7 +21,10 @@ class MovimientoInventarioController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json([
+                'error' => 'Datos de entrada inválidos.',
+                'detalle' => $validator->errors()
+            ], 422);
         }
 
         $datos = $validator->validated();
@@ -50,44 +33,41 @@ class MovimientoInventarioController extends Controller
 
         try {
             $resultado = DB::transaction(function () use ($insumoId, $cantidadAConsumir, $datos) {
-
-                // 1. Check total available stock first to fail early
+                // Validación temprana de stock total
                 $stockTotal = LoteInsumo::where('insumo_id', $insumoId)->sum('cantidad_restante');
                 if ($stockTotal < $cantidadAConsumir) {
-                    throw new \Exception('Stock insuficiente para el insumo solicitado.');
+                    throw new \LogicException('Stock insuficiente para el insumo solicitado.');
                 }
 
-                // 2. Get available lots, ordered by expiration date (FEFO). Lots without an expiration date go last.
+                // Obtener lotes disponibles ordenados por vencimiento (FEFO)
                 $lotesDisponibles = LoteInsumo::where('insumo_id', $insumoId)
                     ->where('cantidad_restante', '>', 0)
                     ->orderByRaw('fecha_vencimiento ASC NULLS LAST')
-                    ->lockForUpdate() // Lock rows to prevent race conditions
+                    ->lockForUpdate()
                     ->get();
 
                 $cantidadPendiente = $cantidadAConsumir;
                 $movimientosCreados = [];
 
-                // 3. Iterate through lots and consume stock
                 foreach ($lotesDisponibles as $lote) {
-                    if ($cantidadPendiente <= 0) {
-                        break; // We have fulfilled the request
-                    }
+                    if ($cantidadPendiente <= 0) break;
 
                     $cantidadADescontar = min($lote->cantidad_restante, $cantidadPendiente);
-
-                    // 4. Decrement stock from the current lot
                     $lote->decrement('cantidad_restante', $cantidadADescontar);
 
-                    // 5. Record the specific movement for this lot
                     $movimientosCreados[] = MovimientoInventario::create([
                         'lote_insumo_id' => $lote->id,
-                        'tipo_movimiento' => 'salida_venta', // Or another type based on request
+                        'tipo_movimiento' => 'salida_venta',
                         'cantidad' => $cantidadADescontar,
                         'motivo' => $datos['motivo'],
                     ]);
 
                     $cantidadPendiente -= $cantidadADescontar;
                 }
+
+                // === ASERCIÓN: validar supuesto lógico interno ===
+                // En este punto, toda la cantidad debe haberse consumido (gracias a la validación previa)
+                assert($cantidadPendiente == 0, 'Error lógico: no se consumió toda la cantidad solicitada.');
 
                 return $movimientosCreados;
             });
@@ -97,8 +77,39 @@ class MovimientoInventarioController extends Controller
                 'movimientos' => $resultado
             ], 200);
 
+        } catch (\LogicException $e) {
+            // Error de lógica de negocio (ej. stock insuficiente)
+            return response()->json([
+                'error' => 'No se puede procesar la solicitud.',
+                'detalle' => $e->getMessage()
+            ], 422);
+
+        } catch (QueryException $e) {
+            // Error específico de base de datos (ej. conexión perdida, restricción violada)
+            \Log::error('Error en BD al registrar salida: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error temporal en el sistema. Intente más tarde.'
+            ], 500);
+
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 422); // 422 is more appropriate for validation/logic errors
+            // Fallback para errores imprevistos (aunque en teoría no deberían ocurrir)
+            \Log::error('Error inesperado: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Ocurrió un error inesperado.'
+            ], 500);
         }
+    }
+
+    public function index(Request $request)
+    {
+        $limit = $request->query('limit');
+        $query = MovimientoInventario::with('loteInsumo.insumo')->latest();
+
+        if (is_numeric($limit) && $limit > 0) {
+            $query->take($limit);
+        }
+
+        $movimientos = $query->get();
+        return response()->json($movimientos);
     }
 }

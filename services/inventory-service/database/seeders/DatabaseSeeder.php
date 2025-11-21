@@ -17,13 +17,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UserSeeder::class,
+            CategoriaSeeder::class,
+            InsumoSeeder::class,
+            ProductoSeeder::class,
         ]);
-        User::updateOrCreate(
-            ['email' => 'admin@example.com'], // Busca al usuario por su email
-            [
-                'name' => 'Admin User',
-                'password' => Hash::make('password'), // Asigna y hashea la contraseña
-            ]
-        );
     }
 }

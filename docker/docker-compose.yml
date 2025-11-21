@@ -40,7 +40,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ../services/inventory-service:/var/www/html
+      - ../frontend-admin:/var/www/html
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     networks:
       - happy_donuts_network

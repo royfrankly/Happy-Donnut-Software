@@ -1,6 +1,8 @@
 # Stage 1: Builder
-FROM composer:2 as builder
+FROM php:8.2-fpm-alpine as builder
 WORKDIR /app
+RUN apk add --no-cache curl unzip git
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 COPY composer.json composer.lock ./
 RUN composer install --no-scripts --no-autoloader --no-dev --prefer-dist
 COPY . .

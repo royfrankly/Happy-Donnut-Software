@@ -62,4 +62,73 @@ Usa exclusivamente estos tipos para categorizar tus cambios:
 | **`perf`** | Performance | Cambios dedicados exclusivamente a mejorar el **rendimiento/velocidad**. |
 | **`revert`** | Revert | Cuando deshaces (reviertes) un commit anterior. |
 
+
+
+
+
 ## 🚀 Arquitectura y Servicios
+
+## Bases de datos (conexión)
+
+Ya puedes conectarte a las bases de datos desde tu máquina. Configura tu cliente o aplicación con los siguientes datos:
+
+- Host: `localhost`
+- Port: `5440`
+- User: `admin`
+- Pass: `secret`
+- Database: `auth_db`
+
+Nota: usamos el puerto `5440` mapeado en el host para el servicio de base de datos. Si otro servicio requiere acceso directo desde tu equipo, usa el puerto correspondiente que aparece en `docker-compose.yml`.
+
+Conexión desde línea de comandos (ejemplos):
+
+- Postgres (si tu contenedor expone un servidor Postgres)(lo de abajo es opcional pueden conectarse como en la imagen que envie al whatsap):
+
+```powershell
+# desde el host (requiere el cliente psql instalado)
+pSQL -h localhost -p 5440 -U admin -d auth_db
+# ejemplo con psql estándar
+# psql "host=localhost port=5440 user=admin dbname=auth_db"
+```
+
+- MySQL/MariaDB (si usas MySQL en su lugar):
+
+```powershell
+# desde el host (requiere el cliente mysql instalado)
+mysql -h 127.0.0.1 -P 5440 -u admin -psecret auth_db
+```
+
+Si prefieres GUI (DBeaver, TablePlus, HeidiSQL): usa `localhost` como host, `5440` como puerto y las credenciales anteriores.
+
+Si necesitas entrar al contenedor de la base de datos para ejecutar comandos internamente:
+
+```powershell
+# listar contenedores
+docker-compose ps
+# abrir shell en el contenedor (reemplaza <db_service> por el nombre, ej. auth_db o postgres)
+docker exec -it <db_service> bash
+# dentro del contenedor puedes usar psql/mysql según corresponda
+```
+
+## Correr los contenedores (rápido)
+
+Para levantar todos los servicios definidos en `docker-compose.yml`:
+
+```powershell
+# en la raíz del repositorio
+docker-compose up -d --build
+
+# ver estado y puertos mapeados
+docker-compose ps
+
+# ver logs de un servicio (reemplaza <service> por el nombre)
+docker-compose logs -f <service>
+
+# parar y borrar contenedores
+docker-compose down
+```
+
+Consejos prácticos:
+
+- esperen a que termine de crear todos los contenedores para que puedan hacer los cambios, al principio demora un huevo.
+

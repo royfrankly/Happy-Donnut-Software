@@ -17,10 +17,15 @@ return new class extends Migration
             $table->string('apellido');
             $table->string('dni')->unique();
             $table->string('telefono')->nullable();
-            $table->string('rol'); // Ej: 'ADMIN', 'EMPLEADO'
-            $table->string('password_hash');
+            $table->string('email')->unique()->nullable();
+            // referencia opcional al administrativo responsable (no forzada como FK)
+            $table->unsignedBigInteger('administrativo_id')->nullable()->index();
+            $table->string('password')->nullable();
+            $table->string('user_code')->nullable();
             $table->boolean('estado')->default(true);
-            $table->timestamps(); // Crea 'created_at' y 'updated_at'
+            $table->timestamps();
+
+            $table->unique('user_code');
         });
     }
 

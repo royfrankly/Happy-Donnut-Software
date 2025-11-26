@@ -18,8 +18,6 @@ return new class extends Migration
             $table->string('dni')->unique();
             $table->string('telefono')->nullable();
             $table->string('email')->unique()->nullable();
-            // referencia opcional al administrativo responsable (no forzada como FK)
-            $table->unsignedBigInteger('administrativo_id')->nullable()->index();
             $table->string('password')->nullable();
             $table->string('user_code')->nullable();
             $table->boolean('estado')->default(true);

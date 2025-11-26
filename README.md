@@ -85,10 +85,13 @@ Conexión desde línea de comandos (ejemplos):
 - Postgres (si tu contenedor expone un servidor Postgres)(lo de abajo es opcional pueden conectarse como en la imagen que envie al whatsap):
 
 ```powershell
-# desde el host (requiere el cliente psql instalado)
-pSQL -h localhost -p 5440 -U admin -d auth_db
-# ejemplo con psql estándar
-# psql "host=localhost port=5440 user=admin dbname=auth_db"
+# desde cualquier sgbd como pgadmin o dbeaver o en vscode con extensiones 
+host = localhost
+puerto = depende al servicio(desde 5440 para arriva, esta en el docker-compose los puertos)
+database = <nombre-del-servicio>_db -> ej: auth_db(en el docker-compose tambien esta)
+            nombres de db: auth_db,product_db,inventory_db,order_db,email_db,apigateway_db
+username = admin
+password = secret
 ```
 
 - MySQL/MariaDB (si usas MySQL en su lugar):

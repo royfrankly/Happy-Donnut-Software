@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from 'react';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -11,6 +10,8 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Comments from './pages/Comments';
 
+// CORRECCIÓN 1: Ajusté la ruta porque en tu imagen el archivo está dentro de "layout"
+import HealthCheck from './components/layout/HealthCheck';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('inicio');
@@ -72,6 +73,9 @@ export default function App() {
 
   return (
     <div className="font-sans antialiased">
+      {/* CORRECCIÓN 2: Aquí agregamos el HealthCheck dentro de la App principal */}
+      <HealthCheck />
+
       <Header
         activeSection={activeSection}
         handleNavigation={handleNavigation}
@@ -81,7 +85,9 @@ export default function App() {
         setIsCartOpen={setIsCartOpen}
         setIsLoginOpen={setIsLoginOpen}
       />
+      
       <main>{renderPage()}</main>
+      
       <Footer />
 
       <CartModal

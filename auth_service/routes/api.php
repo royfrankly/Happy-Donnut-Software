@@ -8,3 +8,8 @@ Route::prefix('v1')->controller(AuthController::class)->group(function () {
     Route::post('/register', 'register');
     Route::post('/login', 'login');
 });
+
+use App\Http\Controllers\HealthController;
+
+// Endpoint para verificar salud del sistema
+Route::get('/health', [HealthController::class, 'health']);

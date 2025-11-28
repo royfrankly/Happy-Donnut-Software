@@ -39,3 +39,7 @@ Route::middleware('auth:sanctum')->group(function (){
 
 
 });
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'Conectado al Gateway']);
+});

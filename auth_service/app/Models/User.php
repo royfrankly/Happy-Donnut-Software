@@ -49,4 +49,9 @@ class User extends Authenticatable
         'password' => 'hashed',
         'estado' => 'boolean', // <-- AÑADIDO: Asegura que 'estado' sea siempre true/false
     ];
+
+    public function comments()
+    {
+        return $this->hasMany(\App\Models\Comment::class);
+    }
 }

@@ -135,4 +135,3 @@ Consejos prácticos:
 
 - esperen a que termine de crear todos los contenedores para que puedan hacer los cambios, al principio demora un huevo.
 
-cambio en el readme

@@ -25,7 +25,7 @@ class Empleado extends Authenticatable
         'dni',
         'telefono',
         'rol',
-        'password_hash',
+        'password',
         'estado',
     ];
 
@@ -34,7 +34,7 @@ class Empleado extends Authenticatable
      * MUY IMPORTANTE para la seguridad.
      */
     protected $hidden = [
-        'password_hash',
+        'password',
     ];
 
     /**
@@ -49,6 +49,6 @@ class Empleado extends Authenticatable
      */
     public function getAuthPassword()
     {
-        return $this->password_hash;
+        return $this->password;
     }
 }

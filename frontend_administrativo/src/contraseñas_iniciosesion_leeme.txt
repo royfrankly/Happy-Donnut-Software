@@ -1,0 +1,118 @@
+================================================================================
+              HAPPYDONUTS - CREDENCIALES DE INICIO DE SESIÓN
+================================================================================
+
+🔐 USUARIOS DE PRUEBA DEL SISTEMA
+----------------------------------
+
+Este archivo contiene las credenciales de acceso predeterminadas para el 
+sistema HappyDonuts. Por seguridad, guarda este archivo en un lugar seguro 
+y no lo compartas públicamente.
+
+
+👔 ADMINISTRADOR (Acceso Completo)
+----------------------------------
+Usuario:     admin
+Contraseña:  admin123
+
+Permisos:
+✅ Acceso a todos los módulos
+✅ Ventas y comprobantes
+✅ Gestión completa de inventario
+✅ Notas de entrada (control de stock)
+✅ Notas de salida
+✅ Clientes y proveedores
+✅ Compras a proveedores
+✅ Promociones y combos
+✅ Gestión de caja
+✅ Configuración del sistema
+✅ Gestión de usuarios y locales
+✅ Soporte
+
+
+👤 EMPLEADO (Acceso Limitado)
+------------------------------
+Usuario:     empleado
+Contraseña:  emp123
+
+Permisos:
+✅ Dashboard
+✅ Ventas y comprobantes
+✅ Inventario (solo lectura)
+✅ Notas de salida
+✅ Gestión de caja (apertura, cierre, movimientos)
+✅ Soporte
+❌ NO accede a Configuración
+❌ NO accede a Notas de Entrada
+❌ NO accede a Compras
+❌ NO accede a Clientes/Proveedores
+❌ NO accede a Promociones
+
+
+================================================================================
+⚠️  IMPORTANTE - SEGURIDAD
+================================================================================
+
+1. CAMBIAR CONTRASEÑAS EN PRODUCCIÓN
+   - Estas son contraseñas de prueba
+   - NUNCA uses estas contraseñas en un entorno real
+   - Cambia las contraseñas antes de usar el sistema en producción
+
+2. PROTECCIÓN DEL ARCHIVO
+   - NO subas este archivo a repositorios públicos
+   - NO compartas estas credenciales por email o chat
+   - Guarda este archivo en un gestor de contraseñas
+
+3. CREAR USUARIOS PERSONALIZADOS
+   - Accede con el usuario "admin"
+   - Ve a Configuración → Usuarios
+   - Crea usuarios con contraseñas seguras
+   - Elimina o desactiva los usuarios de prueba
+
+
+================================================================================
+📝 NOTAS TÉCNICAS
+================================================================================
+
+Ubicación del código:
+- Archivo: /components/views/Login.tsx
+- Constante: USUARIOS (líneas 13-16)
+
+Para modificar usuarios de prueba:
+1. Abre el archivo Login.tsx
+2. Modifica el array USUARIOS
+3. Cambia usuario, contraseña y rol según necesites
+
+Ejemplo:
+```javascript
+const USUARIOS = [
+  { usuario: "admin", contraseña: "admin123", rol: "Administrador" as const },
+  { usuario: "empleado", contraseña: "emp123", rol: "Empleado" as const }
+];
+```
+
+
+================================================================================
+🔄 RECUPERACIÓN DE ACCESO
+================================================================================
+
+Si olvidaste tu contraseña:
+1. Los usuarios están codificados en el archivo Login.tsx
+2. No hay función de "recuperar contraseña" (sistema local)
+3. Para resetear: modifica el archivo Login.tsx directamente
+
+
+================================================================================
+📞 SOPORTE
+================================================================================
+
+Para asistencia técnica:
+- Revisa la documentación en /docs
+- Consulta el README.md
+- Módulo de Soporte dentro del sistema
+
+
+================================================================================
+Última actualización: Noviembre 2024
+Sistema: HappyDonuts v1.0.0
+================================================================================

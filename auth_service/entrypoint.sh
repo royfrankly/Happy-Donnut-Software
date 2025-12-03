@@ -30,13 +30,20 @@ if ! grep -q "APP_KEY=base64:" /var/www/.env; then
   php artisan key:generate
 fi
 
-# 5. EJECUTAR MIGRACIONES
+# 5. LIMPIAR CACHÉ DE PAQUETES Y EJECUTAR MIGRACIONES
+# Eliminamos el manifiesto de paquetes para evitar referencias obsoletas (como Laravel\\Pail\\PailServiceProvider)
+cd /var/www
+rm -f bootstrap/cache/packages.php
+
+# Regeneramos el manifiesto de paquetes según los paquetes realmente instalados
+php artisan package:discover --ansi || true
+
 # Usamos 'php artisan migrate --force' para entornos no interactivos.
 # El env=production es opcional si ya está en .env, pero lo mantenemos si lo necesitas.
 echo "Running migrations..."
 php artisan migrate --force
 
-# 6. INICIAR EL PROCESO PRINCIPAL
-echo "Starting PHP-FPM..."
-# El exec reemplaza el proceso shell por el proceso php-fpm, asegurando un PID 1 correcto.
-exec php-fpm
+# 6. INICIAR EL SERVIDOR HTTP DE LARAVEL
+echo "Starting Laravel HTTP server on port 8000..."
+# Iniciamos php artisan serve escuchando en todas las interfaces, puerto 8000.
+exec php artisan serve --host=0.0.0.0 --port=8000

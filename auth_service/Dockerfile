@@ -34,5 +34,5 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["php-fpm"]
 
-# Exponer puerto
-EXPOSE 9000
+# Exponer puerto HTTP de Laravel (php artisan serve)
+EXPOSE 8000

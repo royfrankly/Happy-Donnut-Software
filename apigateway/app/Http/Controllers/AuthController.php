@@ -7,65 +7,92 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-// REFACTORIZACIÓN: Añadir métodos para que el GatewayController los use
+/**
+ * AuthController se utiliza INTERNAMENTE por el GatewayController 
+ * para manejar la sincronización de usuarios y la gestión de tokens 
+ * de Laravel Sanctum. NO expone rutas públicas.
+ */
 class AuthController extends Controller
 {
-    // Método de registro que solo usa el GatewayController.
-    // Asume que el usuario YA FUE CREADO en el Auth-Service.
+    /**
+     * Crea un registro de usuario en la DB local del Gateway (sincronización) 
+     * y genera un token Sanctum.
+     * @param array $userData Los datos del usuario validados y creados por el Auth-Service.
+     */
     public function registerFromService(Request $request, $userData)
     {
-        // NOTA: En un sistema real, aquí sincronizarías el usuario con la DB local
-        // o usarías un sistema de caché. Por simplicidad, solo generamos el token
-        // basándonos en el email que ya fue validado y creado por el Auth-Service.
-        
-        $user = User::where('email', $userData['email'])->first();
+        // El auth-service ahora usa 'username', pero el Gateway sigue usando 'name' y 'email'
+        $identifier = $userData['username'] ?? $userData['email'] ?? null;
 
-        // Si el usuario no existe en la DB local del Gateway (lo cual sería ideal)
-        // podrías crearlo aquí basado en $userData si lo necesitas.
+        // 1. Buscar o crear el usuario en la DB local del Gateway.
+        $user = User::where('email', $identifier)->first();
+
         if (!$user) {
+             // Crear el usuario solo con datos de identificación
              $user = User::create([
-                'name' => $userData['name'],
-                'email' => $userData['email'],
-                // NOTA: Nunca guardamos la contraseña aquí, solo los datos de identificación
-                'password' => Hash::make(random_bytes(16)), // Contraseña aleatoria si no se usa
-            ]);
+                 'name' => $userData['username'] ?? $userData['name'] ?? 'User',
+                 'email' => $identifier,
+                 // Se usa una contraseña aleatoria/dummy, ya que la verificación real 
+                 // ocurre en el Auth-Service. Solo necesitamos el registro para Sanctum.
+                 'password' => Hash::make(random_bytes(16)), 
+             ]);
         }
 
-
+        // 2. Generar el token de Sanctum
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Usuario registrado y token generado en Gateway.',
+            'message' => 'Registro exitoso. Token generado en Gateway.',
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
         ], 201);
     }
 
-    // Método de login que solo usa el GatewayController.
-    // Asume que el Auth-Service ya validó las credenciales.
+    /**
+     * Busca al usuario sincronizado en el Gateway y genera un nuevo token.
+     * @param array $userData Los datos del usuario autenticado por el Auth-Service.
+     */
     public function loginFromService(Request $request, $userData)
     {
-        $user = User::where('email', $userData['email'])->first();
+        // El auth-service ahora usa 'username', pero el Gateway sigue usando 'email'
+        $identifier = $userData['username'] ?? $userData['email'] ?? null;
+        
+        $user = User::where('email', $identifier)->first();
 
+        // Esto puede ocurrir si el usuario se registra en otro momento y 
+        // la sincronización del registro local falla.
         if (! $user) {
-            return response()->json(['message' => 'Error de sincronización de usuario en Gateway.'], 500);
+            return response()->json(['message' => 'Error: Usuario no sincronizado en Gateway.'], 500);
         }
 
-        // Eliminar tokens viejos y crear uno nuevo
+        // 1. Revocar tokens anteriores (buena práctica de seguridad)
         $user->tokens()->delete();
+        
+        // 2. Crear un nuevo token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Inicio de sesión y token generado en Gateway.',
+            'message' => 'Inicio de sesión exitoso. Token generado en Gateway.',
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
         ]);
     }
-    
-    // Dejamos el resto de los métodos si los necesitas.
-    // public function register(Request $request) { /* ... */ }
-    // public function login(Request $request) { /* ... */ }
-    // public function logout(Request $request) { /* ... */ }
+
+    /**
+     * Invalida el token de Sanctum usado en la petición actual (Logout).
+     */
+    public function logoutUser(Request $request)
+    {
+        // 1. Asegurar que haya un usuario autenticado
+        if (!$request->user()) {
+            return response()->json(['message' => 'No hay sesión activa.'], 401);
+        }
+
+        // 2. Revocar el token que se usó en esta petición
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Sesión cerrada correctamente.'], 200);
+    }
 }

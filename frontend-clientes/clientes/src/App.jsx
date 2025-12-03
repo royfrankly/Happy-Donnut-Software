@@ -10,9 +10,47 @@ import Promotions from './pages/Promotions';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Comments from './pages/Comments';
+import { loginUser, registerUser } from './services/authService';
 
 
 export default function App() {
+
+   const [isModalOpen, setIsModalOpen] = useState(false);
+      // Estado para controlar si se muestra el formulario de Login (true) o Register (false)
+   
+      const [formError, setFormError] = useState(null); // Estado para mostrar errores al usuario
+      const [isLoading, setIsLoading] = useState(false); // Estado para deshabilitar el botón
+  
+      const onClose = () => {
+          setIsModalOpen(false);
+          // Opcional: Limpiar el formulario al cerrar
+          setLoginForm({ name: '', email: '', password: '', confirmPassword: '' });
+          setFormError(null);
+      };
+  
+      /**
+       * Función que cambia la vista (Login/Register) y limpia los campos del formulario 
+       * que no son comunes para evitar que se arrastre información de uno a otro.
+       * @param {boolean} isLogin - True para mostrar Login, False para mostrar Register.
+       */
+      const handleToggleView = (isLogin) => {
+          setShowLogin(isLogin);
+          setFormError(null); // Limpiar errores al cambiar de vista
+  
+          // Mantenemos email y limpiamos los demás campos para evitar datos cruzados
+          setLoginForm(prev => ({
+              ...prev,
+              // Limpiar campos específicos del formulario opuesto
+              name: '',
+              password: '', 
+              confirmPassword: '' 
+          }));
+      };
+  
+  
+
+
+
   const [activeSection, setActiveSection] = useState('inicio');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -46,11 +84,46 @@ export default function App() {
 
   const getTotalPrice = () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    console.log('Login con:', loginForm);
-    setIsLoginOpen(false);
-  };
+
+ const handleLogin = async (e) => {
+        e.preventDefault();
+        setFormError(null); // Limpiar errores anteriores
+        setIsLoading(true);
+
+        console.log('hola');
+        const { name, email, password, confirmPassword } = loginForm;
+        let result;
+
+        if (showLogin) {
+            // Lógica de LOGIN
+            result = await loginUser(email, password);
+        } else {
+            // Lógica de REGISTRO
+            result = await registerUser(name, email, password, confirmPassword);
+        }
+        console.log('hola');
+        setIsLoading(false);
+        
+        console.log(result);
+
+        if (result.success) {
+            // Manejo de Éxito
+            console.log(`${showLogin ? 'Login' : 'Registro'} exitoso:`, result.data);
+            
+            // Aquí deberías guardar el token de sesión (si existe) y/o actualizar tu contexto de usuario global
+            // ... (Lógica de autenticación exitosa) ...
+            
+            onClose(); // Cerrar el modal
+        } else {
+            // Manejo de Errores (de red o del servidor)
+            const errorMsg = result.error.message || 'Ocurrió un error desconocido.';
+            setFormError({ 
+                message: errorMsg, 
+                field: result.error.field // Útil para resaltar el campo si lo soporta el modal
+            });
+            console.error(`${showLogin ? 'Error de Login' : 'Error de Registro'}:`, result.error);
+        }
+    };
 
   const handleNavigation = (section) => {
     setActiveSection(section);

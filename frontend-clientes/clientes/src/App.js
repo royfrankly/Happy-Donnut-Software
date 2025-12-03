@@ -7,7 +7,7 @@ import Home from './pages/Home';
 
 
 import './App.css'; 
-
+console.log('Test ENV:', process.env.REACT_APP_GATEWAY_URL);
 
 function App() {
   return (
@@ -16,6 +16,7 @@ function App() {
     // pero por ahora solo carga la página Home.
     <div className="App">
       <Home />
+      
     </div>
   );
 }

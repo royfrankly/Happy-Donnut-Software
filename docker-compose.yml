@@ -188,8 +188,16 @@ services:
     networks:
       - happydonut-net
     depends_on:
-      db-apigateway:
-        condition: service_healthy
+        db-apigateway:
+          condition: service_healthy
+        auth-service:                    # ← AGREGA ESTO
+          condition: service_healthy
+        product-service:
+          condition: service_healthy
+        inventory-service:
+          condition: service_healthy
+        order-service:
+          condition: service_healthy
     healthcheck:
       test: ["CMD", "php-fpm", "-t"]
       interval: 30s

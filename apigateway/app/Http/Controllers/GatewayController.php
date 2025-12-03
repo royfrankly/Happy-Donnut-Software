@@ -1,96 +1,187 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Exception;
+use App\Http\Controllers\AuthController;
 
-class GatewayController extends Controller{
-    protected const INVENTORY_URL = 'http://inventory-service:8081';
-    protected const ORDER_URL = 'http://order-service:8082';
-    // Asumiendo que el Auth-Service corre en http://localhost:8081
-    protected const AUTH_URL = 'http://localhost:8081'; 
+class GatewayController extends Controller
+{
+    // IMPORTANTE: Usar los NOMBRES DE SERVICIO del docker-compose.yml
+    // NO los nombres de contenedor (container_name)
+    protected const AUTH_URL = 'http://auth-service:8000';
+    protected const PRODUCT_URL = 'http://product-service:8000';
+    protected const INVENTORY_URL = 'http://inventory-service:8000';
+    protected const ORDER_URL = 'http://order-service:8000';
+    protected const EMAIL_URL = 'http://email-service:8000';
 
 
-    protected function makeServiceRequest(Request $request, string $url,string $method = 'get'){
-        // ... (Tu función makeServiceRequest se mantiene igual)
-        $headers=[];
+    /**
+     * Función genérica para enviar peticiones a los microservicios.
+     */
+    protected function makeServiceRequest(Request $request, string $url, string $method = 'get')
+    {
+        $headers = [];
 
-        if($request->user()){
+        if ($request->user()) {
             $headers['X-User-ID'] = $request->user()->id;     
         }
 
-        if($token = $request->header('Authorization')){
-            $headers['Authorization']=$token;
+        if ($token = $request->header('Authorization')) {
+            $headers['Authorization'] = $token;
         }
 
-        try{
-            $http= Http::withHeaders($headers);
+        try {
+            $http = Http::withHeaders($headers)->timeout(10);
 
-            switch (strtolower($method)){
+            switch (strtolower($method)) {
                 case 'post':
                     return $http->post($url, $request->all());
                 case 'put':
-                    return $http->put($url,$request->all());
+                    return $http->put($url, $request->all());
                 case 'delete':
-                    return $http->delete($url,$request->all());
+                    return $http->delete($url, $request->all());
                 case 'get':
-                    default:
-                    return $http->get($url.'?'.$request->getQueryString());
+                default:
+                    $fullUrl = $url . '?' . $request->getQueryString();
+                    return $http->get($fullUrl);
             }
-        }catch (Exception $e){
-                return response()->json(['error'=> 'Service Unavaliable', 'message'=> $e->getMessage()],503);
+        } catch (Exception $e) {
+            \Log::error('Service Request Failed', [
+                'url' => $url,
+                'method' => $method,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'error' => 'Service Unavailable', 
+                'message' => $e->getMessage(),
+                'service_url' => $url
+            ], 503);
         }
     }
 
-    // NUEVO: Endpoint de Registro en el Gateway
+
+    /**
+     * Delega la creación de usuario al Auth Service y genera el Token en el Gateway.
+     */
     public function register(Request $request)
     {
-        // 1. Redirigir la petición de registro al Auth-Service
-        $response = Http::post(self::AUTH_URL . '/api/v1/register', $request->all());
+        \Log::info('Gateway: Registro iniciado', $request->only(['username']));
+        
+        try {
+            $response = Http::timeout(10)->post(self::AUTH_URL . '/api/v1/register', $request->all());
 
-        // 2. Si el registro en el Auth-Service falla (422, 400, etc.), devolvemos el error inmediatamente.
-        if ($response->failed()) {
-            return response()->json($response->json(), $response->status());
+            if ($response->failed()) {
+                \Log::warning('Gateway: Auth service rechazó el registro', [
+                    'status' => $response->status(),
+                    'response' => $response->json()
+                ]);
+                return response()->json($response->json(), $response->status());
+            }
+
+            $user = $response->json('user');
+            \Log::info('Gateway: Usuario registrado en auth-service', ['user_id' => $user['id'] ?? null]);
+            
+            $authController = new AuthController();
+            return $authController->registerFromService($request, $user);
+            
+        } catch (Exception $e) {
+            \Log::error('Gateway: Error conectando con auth-service', [
+                'error' => $e->getMessage(),
+                'url' => self::AUTH_URL . '/api/v1/register'
+            ]);
+            
+            return response()->json([
+                'error' => 'No se pudo conectar con el servicio de autenticación',
+                'message' => $e->getMessage(),
+                'service_url' => self::AUTH_URL
+            ], 503);
         }
-
-        // 3. Si el registro es exitoso (201), tomamos los datos del usuario.
-        $user = $response->json('user');
-        
-        // 4. EL API GATEWAY GENERA EL TOKEN (Usando Sanctum que debe estar instalado AQUÍ)
-        // Buscamos el usuario en la BD local del Gateway (o podríamos solo usar el ID para generar el token si el user existe)
-        // NOTA: Para microservicios, el API Gateway NO DEBERÍA tener la tabla users, pero 
-        // para usar Sanctum, la necesita. Por simplicidad, asumimos que el Gateway
-        // sincroniza o crea un registro temporal. Si ya usaste el AuthController anterior, úsalo.
-        
-        // Usamos el AuthController interno del Gateway para la simplicidad.
-        $authController = new AuthController();
-        return $authController->registerFromService($request, $user);
-        
     }
 
 
-    // MODIFICADO: Endpoint de Login en el Gateway
     public function login(Request $request)
     {
-        // 1. Redirigir la petición de login al Auth-Service para verificación de credenciales
-        $response = Http::post(self::AUTH_URL . '/api/v1/login', [
-            'email' => $request->email,
-            'password' => $request->password,
-        ]);
+        try {
+            $response = Http::timeout(10)->post(self::AUTH_URL . '/api/v1/login', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
 
-        // 2. Si la autenticación falla (401), devolvemos el error inmediatamente.
-        if ($response->failed()) {
-            return response()->json($response->json(), $response->status());
+            if ($response->failed()) {
+                return response()->json($response->json(), $response->status());
+            }
+            
+            $user = $response->json('user');
+            $authController = new AuthController();
+            return $authController->loginFromService($request, $user);
+            
+        } catch (Exception $e) {
+            \Log::error('Gateway: Error en login', [
+                'error' => $e->getMessage(),
+                'url' => self::AUTH_URL . '/api/v1/login'
+            ]);
+            
+            return response()->json([
+                'error' => 'No se pudo conectar con el servicio de autenticación',
+                'message' => $e->getMessage()
+            ], 503);
         }
-        
-        // 3. Si la autenticación es exitosa (200), tomamos el usuario devuelto.
-        $user = $response->json('user');
-
-        // 4. EL API GATEWAY GENERA EL TOKEN (Usando Sanctum que debe estar instalado AQUÍ)
-        // Usamos el AuthController interno del Gateway para la simplicidad.
-        $authController = new AuthController();
-        return $authController->loginFromService($request, $user);
     }
-    
-    // ... (restantes funciones getProducts, createProduct, createOrder)
+
+    public function logout(Request $request)
+    {
+        $authController = new AuthController();
+        return $authController->logoutUser($request);
+    }
+
+
+    // ===================================================================
+    //  MÉTODOS DE INVENTORY SERVICE
+    // ===================================================================
+
+    public function getProducts(Request $request)
+    {
+        $response = $this->makeServiceRequest($request, self::INVENTORY_URL . '/api/v1/products', 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function getProduct(Request $request, $id)
+    {
+        $response = $this->makeServiceRequest($request, self::INVENTORY_URL . "/api/v1/products/{$id}", 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function createProduct(Request $request)
+    {
+        $response = $this->makeServiceRequest($request, self::INVENTORY_URL . '/api/v1/products', 'post');
+        return response()->json($response->json(), $response->status());
+    }
+
+    // ===================================================================
+    //  MÉTODOS DE ORDER SERVICE
+    // ===================================================================
+
+    public function getOrders(Request $request)
+    {
+        $userId = $request->user()->id ?? null;
+        $url = self::ORDER_URL . "/api/v1/orders";
+        
+        $response = $this->makeServiceRequest($request, $url, 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function createOrder(Request $request)
+    {
+        $response = $this->makeServiceRequest($request, self::ORDER_URL . '/api/v1/orders', 'post');
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function cancelOrder(Request $request, $id)
+    {
+        $response = $this->makeServiceRequest($request, self::ORDER_URL . "/api/v1/orders/{$id}/cancel", 'put');
+        return response()->json($response->json(), $response->status());
+    }
 }

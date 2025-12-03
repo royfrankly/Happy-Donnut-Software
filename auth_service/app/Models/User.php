@@ -15,18 +15,44 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'usuarios';
+
+    /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'usuario_id';
+
+    /**
+     * Indicates if the model's ID is auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
+     * The data type of the auto-incrementing ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'int';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'apellido', // <-- AÑADIDO
-        'dni',      // <-- AÑADIDO
-        'rol',      // <-- AÑADIDO
-        'email',
-        'password', // Laravel se encarga del hash al usar el método create()
-        'estado',   // <-- AÑADIDO
+        'username',  // Cambiado de 'name' a 'username'
+        'password',
+        'role',
+        'estado',
+        'persona_id',
     ];
 
     /**
@@ -40,15 +66,31 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'estado' => 'boolean',
         'password' => 'hashed',
-        'estado' => 'boolean', // <-- AÑADIDO: Asegura que 'estado' sea siempre true/false
     ];
+
+    /**
+     * Get the username field for authentication.
+     * Laravel uses this for password reset and other features.
+     */
+    public function getEmailForPasswordReset()
+    {
+        return $this->username;
+    }
+
+    /**
+     * Get the email address for notifications.
+     */
+    public function routeNotificationForMail($notification = null)
+    {
+        return $this->username; // Usamos username como si fuera email
+    }
 
     public function comments()
     {

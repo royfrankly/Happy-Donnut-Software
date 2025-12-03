@@ -30,7 +30,14 @@ if ! grep -q "APP_KEY=base64:" /var/www/.env; then
   php artisan key:generate
 fi
 
-# 5. EJECUTAR MIGRACIONES
+# 5. LIMPIAR CACHÉ DE PAQUETES Y EJECUTAR MIGRACIONES
+# Eliminamos el manifiesto de paquetes para evitar referencias obsoletas (como Laravel\Pail\PailServiceProvider)
+cd /var/www
+rm -f bootstrap/cache/packages.php
+
+# Regeneramos el manifiesto de paquetes según los paquetes realmente instalados
+php artisan package:discover --ansi || true
+
 # Usamos 'php artisan migrate --force' para entornos no interactivos.
 # El env=production es opcional si ya está en .env, pero lo mantenemos si lo necesitas.
 echo "Running migrations..."

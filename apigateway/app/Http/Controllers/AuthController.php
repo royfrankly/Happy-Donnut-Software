@@ -55,21 +55,24 @@ class AuthController extends Controller
      */
     public function loginFromService(Request $request, $userData)
     {
-        // El auth-service ahora usa 'username', pero el Gateway sigue usando 'email'
+        
         $identifier = $userData['username'] ?? $userData['email'] ?? null;
         
-        $user = User::where('email', $identifier)->first();
+        // Buscar usuario por múltiples campos para compatibilidad
+        $user = User::where('email', $identifier)
+                    ->orWhere('name', $identifier)
+                    ->orWhere('email', 'like', '%' . $identifier . '%')
+                    ->first();
 
-        // Esto puede ocurrir si el usuario se registra en otro momento y 
-        // la sincronización del registro local falla.
+       
         if (! $user) {
             return response()->json(['message' => 'Error: Usuario no sincronizado en Gateway.'], 500);
         }
 
-        // 1. Revocar tokens anteriores (buena práctica de seguridad)
+       
         $user->tokens()->delete();
         
-        // 2. Crear un nuevo token
+      
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

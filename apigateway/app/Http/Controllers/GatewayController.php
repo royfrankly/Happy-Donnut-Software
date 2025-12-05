@@ -12,9 +12,9 @@ class GatewayController extends Controller
     // IMPORTANTE: Usar los NOMBRES DE SERVICIO del docker-compose.yml
     // NO los nombres de contenedor (container_name)
     protected const AUTH_URL = 'http://auth-service:8000';
-    protected const PRODUCT_URL = 'http://product-service:8000';
-    protected const INVENTORY_URL = 'http://inventory-service:8000';
-    protected const ORDER_URL = 'http://order-service:8000';
+    protected const PRODUCT_URL = 'http://product-service:8001';
+    protected const INVENTORY_URL = 'http://inventory-service:8002';
+    protected const ORDER_URL = 'http://order-service:8003';
     protected const EMAIL_URL = 'http://email-service:8000';
 
 
@@ -133,8 +133,8 @@ class GatewayController extends Controller
 
     public function logout(Request $request)
     {
-        $authController = new AuthController();
-        return $authController->logoutUser($request);
+        $request->user()->tokens()->delete();
+        return response()->json(['message' => 'Sesión cerrada']);
     }
 
 
@@ -161,15 +161,34 @@ class GatewayController extends Controller
     }
 
     // ===================================================================
+    //  MÉTODOS DE PRODUCT SERVICE
+    // ===================================================================
+
+    public function getAvailableProducts(Request $request)
+    {
+        $response = $this->makeServiceRequest($request, self::PRODUCT_URL . '/api/v1/products/available', 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function searchProducts(Request $request)
+    {
+        $response = $this->makeServiceRequest($request, self::PRODUCT_URL . '/api/v1/products/search', 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function getCategories(Request $request)
+    {
+        $response = $this->makeServiceRequest($request, self::PRODUCT_URL . '/api/v1/categories', 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
+    // ===================================================================
     //  MÉTODOS DE ORDER SERVICE
     // ===================================================================
 
     public function getOrders(Request $request)
     {
-        $userId = $request->user()->id ?? null;
-        $url = self::ORDER_URL . "/api/v1/orders";
-        
-        $response = $this->makeServiceRequest($request, $url, 'get');
+        $response = $this->makeServiceRequest($request, self::ORDER_URL . '/api/v1/orders', 'get');
         return response()->json($response->json(), $response->status());
     }
 
@@ -179,9 +198,24 @@ class GatewayController extends Controller
         return response()->json($response->json(), $response->status());
     }
 
+    public function getOrder(Request $request, $id)
+    {
+        $response = $this->makeServiceRequest($request, self::ORDER_URL . "/api/v1/orders/{$id}", 'get');
+        return response()->json($response->json(), $response->status());
+    }
+
     public function cancelOrder(Request $request, $id)
     {
-        $response = $this->makeServiceRequest($request, self::ORDER_URL . "/api/v1/orders/{$id}/cancel", 'put');
+        $response = $this->makeServiceRequest($request, self::ORDER_URL . "/api/v1/orders/{$id}", 'delete');
         return response()->json($response->json(), $response->status());
+    }
+
+    // ===================================================================
+    //  MÉTODOS DE AUTH
+    // ===================================================================
+
+    public function getProfile(Request $request)
+    {
+        return response()->json($request->user());
     }
 }

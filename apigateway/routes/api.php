@@ -13,29 +13,20 @@ Route::prefix('auth')->group(function (){
     Route::post('register',[GatewayController::class,'register']);
 });
 
-Route::middleware('auth:sanctum')->group(function (){
-
-    Route::prefix('inventory')->group(function(){
-        Route::get('/',[GatewayController::class,'getProducts']);
-        Route::get('/{id}',[GatewayController::class,'getProduct']);
-        Route::get('/',[GatewayController::class,'createProducts']);
-    });
-
-    Route::prefix('orders')->group(function(){
-        Route::get('/',[GatewayController::class,'getOrders']);
-        Route::post('/',[GatewayController::class,'createOrder']);
-        Route::put('/{id}/cancel',[GatewayController::class,'cancelOrder']);
-    });
-
-
-    Route::prefix('inventory')->group(function(){
-        Route::get('/auth/user', [GatewayController::class,'getProfile']);
-        Route::post('/auth/logout',[GatewayController::class,'logout']);
-    });
-
-    //// Nota: El Microservicio de Email no necesita rutas directas,
-    // ya que es invocado internamente por otros microservicios (o por el Order_Service
-    // o el Auth_Service después de ciertas acciones)
-
-
+Route::middleware('auth:sanctum')->prefix('/v1')->group(function () {
+    
+    // Productos (públicos)
+    Route::get('/products/available', [GatewayController::class, 'getAvailableProducts']);
+    Route::get('/products/search', [GatewayController::class, 'searchProducts']);
+    Route::get('/categories', [GatewayController::class, 'getCategories']);
+    
+    // Órdenes (clientes)
+    Route::get('/orders', [GatewayController::class, 'getOrders']);
+    Route::post('/orders', [GatewayController::class, 'createOrder']);
+    Route::get('/orders/{id}', [GatewayController::class, 'getOrder']);
+    Route::delete('/orders/{id}', [GatewayController::class, 'cancelOrder']);
+    
+    // Auth
+    Route::get('/auth/me', [GatewayController::class, 'getProfile']);
+    Route::post('/auth/logout', [GatewayController::class, 'logout']);
 });

@@ -13,23 +13,21 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Producto::with('categoria', 'promociones');
-        
-        // Filtros
-        if ($request->has('category_id')) {
-            $query->where('categoria_id', $request->category_id);
+        // Manejar preflight request
+        if ($request->method() === 'OPTIONS') {
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, Authorization');
+            return response('', 200);
         }
         
-        if ($request->has('tipo_producto')) {
-            $query->where('tipo_producto', $request->tipo_producto);
-        }
+        // Agregar headers CORS
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization');
         
-        if ($request->has('activo')) {
-            $query->where('activo_web', $request->activo);
-        }
-        
-        $products = $query->orderBy('nombre_producto')->paginate(10);
-        
+        // Temporal: simplificado para que funcione
+        $products = Producto::with('categoria')->orderBy('nombre_producto')->paginate(10);
         return response()->json($products);
     }
 
@@ -38,28 +36,30 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'categoria_id' => 'required|integer|exists:categorias,categoria_id',
+        // Validar datos recibidos
+        $data = $request->validate([
+            'categoria_id'    => 'required|integer|exists:categorias,categoria_id',
             'nombre_producto' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio_base' => 'required|numeric|min:0',
-            'tipo_producto' => 'required|in:donut,cafe,otro',
-            'activo_web' => 'boolean'
+            'descripcion'     => 'nullable|string',
+            'precio_base'     => 'required|numeric|min:0',
+            'tipo_producto'   => 'required|in:donut,cafe,otro',
+            'activo_web'      => 'required|boolean',
         ]);
 
-        $product = Producto::create([
-            'categoria_id' => $request->categoria_id,
-            'nombre_producto' => $request->nombre_producto,
-            'descripcion' => $request->descripcion,
-            'precio_base' => $request->precio_base,
-            'tipo_producto' => $request->tipo_producto,
-            'activo_web' => $request->activo_web ?? true
-        ]);
+        try {
+            $product = Producto::create($data);
 
-        return response()->json([
-            'message' => 'Producto creado exitosamente',
-            'product' => $product->load('categoria')
-        ], 201);
+            return response()->json([
+                'message' => 'Producto creado exitosamente',
+                'product' => $product->load('categoria'),
+            ], 201);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Por ejemplo, nombre_producto único
+            return response()->json([
+                'message' => 'Ya existe un producto con ese nombre.',
+                'error'   => 'unique_violation',
+            ], 422);
+        }
     }
 
     /**

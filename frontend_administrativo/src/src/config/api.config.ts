@@ -27,13 +27,13 @@ export const API_CONFIG = {
    * true = Usa localStorage (modo actual - desarrollo local)
    * false = Usa API Backend (modo producción)
    */
-  useLocalStorage: true,
+  useLocalStorage: false,
 
   /**
    * 🔌 URL Base del Backend
    * Se obtiene de variable de entorno o usa default
    */
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
 
   /**
    * ⏱️ Timeout de peticiones (ms)

@@ -13,12 +13,23 @@ Route::prefix('auth')->group(function (){
     Route::post('register',[GatewayController::class,'register']);
 });
 
-Route::middleware('auth:sanctum')->prefix('/v1')->group(function () {
-    
+// Rutas públicas de productos (temporal para desarrollo)
+Route::prefix('/v1')->group(function () {
     // Productos (públicos)
     Route::get('/products/available', [GatewayController::class, 'getAvailableProducts']);
     Route::get('/products/search', [GatewayController::class, 'searchProducts']);
     Route::get('/categories', [GatewayController::class, 'getCategories']);
+
+    // Productos (administrativos)
+    Route::get('/products', [GatewayController::class, 'getProducts']);
+    Route::post('/products', [GatewayController::class, 'createProduct']);
+    Route::get('/products/{id}', [GatewayController::class, 'getProduct']);
+    Route::put('/products/{id}', [GatewayController::class, 'updateProduct']);
+    Route::delete('/products/{id}', [GatewayController::class, 'deleteProduct']);
+    Route::put('/products/{id}/status', [GatewayController::class, 'updateProductStatus']);
+});
+
+Route::middleware('auth:sanctum')->prefix('/v1')->group(function () {
     
     // Órdenes (clientes)
     Route::get('/orders', [GatewayController::class, 'getOrders']);

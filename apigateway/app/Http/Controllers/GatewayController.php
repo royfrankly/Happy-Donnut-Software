@@ -12,9 +12,9 @@ class GatewayController extends Controller
     // IMPORTANTE: Usar los NOMBRES DE SERVICIO del docker-compose.yml
     // NO los nombres de contenedor (container_name)
     protected const AUTH_URL = 'http://auth-service:8000';
-    protected const PRODUCT_URL = 'http://product-service:8001';
-    protected const INVENTORY_URL = 'http://inventory-service:8002';
-    protected const ORDER_URL = 'http://order-service:8003';
+    protected const PRODUCT_URL = 'http://product-service:8000';
+    protected const INVENTORY_URL = 'http://inventory-service:8000';
+    protected const ORDER_URL = 'http://order-service:8000';
     protected const EMAIL_URL = 'http://email-service:8000';
 
 

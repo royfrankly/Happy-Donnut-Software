@@ -199,7 +199,7 @@ services:
         order-service:
           condition: service_healthy
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -234,7 +234,7 @@ services:
       db-auth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -269,7 +269,7 @@ services:
       db-product:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -304,7 +304,7 @@ services:
       db-inventory:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -344,7 +344,7 @@ services:
       db-order:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -386,7 +386,7 @@ services:
       # db: # Descomentar si realmente usa la DB
       #  condition: service_healthy
     healthcheck:
-      test: ["CMD", "php-fpm", "-t"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3

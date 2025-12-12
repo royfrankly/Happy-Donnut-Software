@@ -61,4 +61,10 @@
       open: true,
       strictPort: true,
     },
+      allowedHosts: [
+      'happydonut.online',
+      'www.happydonut.online',
+      'localhost',
+      // Si usas ngrok u otro tunel, agrégalo aquí también
+    ],
   });

@@ -4,6 +4,7 @@
   import path from 'path';
 
   export default defineConfig({
+    base: '/admin/',
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -55,7 +56,9 @@
       outDir: 'build',
     },
     server: {
-      port: 3000,
+      host: true,
+      port: 5173,
       open: true,
+      strictPort: true,
     },
   });

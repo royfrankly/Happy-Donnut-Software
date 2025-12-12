@@ -24,6 +24,7 @@ export default defineConfig({
     open: true,
     strictPort: true,
     //base: '/admin/',
+    
     allowedHosts: [
       'happydonut.online',
       'www.happydonut.online',

@@ -36,6 +36,7 @@ interface ProductosProps {
 export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) {
   const [productos, setProductos] = useState<ProductoType[]>([]);
   const [categoriasProductos, setCategoriasProductos] = useState<string[]>([]);
+  const [categorias, setCategorias] = useState<{categoria_id: number, nombre_categoria: string}[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingProduct, setEditingProduct] = useState<ProductoType | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -43,11 +44,68 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
 
-  // Cargar productos al montar el componente
+  // Cargar productos y categorías al montar el componente
   useEffect(() => {
     loadProductos();
+    loadCategorias();
   }, []);
+
+  const loadCategorias = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/v1/categories', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCategorias(data);
+      } else {
+        console.error('Error cargando categorías');
+      }
+    } catch (error) {
+      console.error('Error cargando categorías:', error);
+    }
+  };
+
+  const handleSaveCategory = async () => {
+    if (!newCategory.trim()) return;
+
+    try {
+      const response = await fetch('http://localhost:8080/api/v1/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre_categoria: newCategory.trim(),
+          descripcion: `Categoría ${newCategory.trim()}`
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Categoría creada exitosamente');
+        setShowCategoryDialog(false);
+        setNewCategory("");
+        await loadCategorias();
+      } else {
+        let errorMessage = `Error ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.message) errorMessage = errorData.message;
+        } catch {}
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error guardando categoría:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al crear categoría: ${errorMessage}`);
+    }
+  };
 
   const loadProductos = async () => {
     try {
@@ -104,24 +162,40 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
   };
 
   const handleSaveNewProduct = async () => {
-    if (!newProduct) return;
+    console.log('handleSaveNewProduct llamado, newProduct:', newProduct);
+    
+    if (!newProduct) {
+        console.log('newProduct es null o undefined, saliendo');
+        return;
+    }
 
     try {
+      // Debug: mostrar qué se está enviando
+      const payload = {
+        nombre_producto: newProduct.nombre,
+        categoria_id: newProduct.categoria_id || (categorias.length > 0 ? categorias[0].categoria_id : 1),
+        descripcion: newProduct.nombre,
+        precio_base: newProduct.precio,
+        tipo_producto: newProduct.tipo_producto === 'Preparado' ? 'donut' : 'cafe',
+        activo_web: true,
+      };
+      
+      console.log('Enviando producto:', payload);
+      console.log('newProduct completo:', newProduct);
+      console.log('Categorías disponibles:', categorias);
+
       // Enviar datos reales al API Gateway
+      console.log('Iniciando fetch a http://localhost:8080/api/v1/products');
+      
       const response = await fetch('http://localhost:8080/api/v1/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          nombre_producto: newProduct.nombre,
-          categoria_id: 1, // Donuts Clásicos
-          descripcion: newProduct.nombre,
-          precio_base: newProduct.precio,
-          tipo_producto: newProduct.tipo_producto === 'Preparado' ? 'donut' : 'cafe',
-          activo_web: true,
-        }),
+        body: JSON.stringify(payload),
       });
+      
+      console.log('Response recibida:', response.status, response.statusText);
 
       if (response.ok) {
         toast.success('Producto creado exitosamente en la base de datos');
@@ -152,15 +226,43 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
     if (!editingProduct) return;
 
     try {
-      // Simular actualización
-      setProductos(productos.map(p => p.id === editingProduct.id ? editingProduct : p));
+      // Buscar la categoría seleccionada
+      const selectedCategory = categorias.find(c => c.nombre_categoria === editingProduct.categoria);
       
-      toast.success("Producto actualizado exitosamente");
-      setShowEditDialog(false);
-      setEditingProduct(null);
+      const payload = {
+        nombre_producto: editingProduct.nombre,
+        categoria_id: selectedCategory?.categoria_id || 1,
+        descripcion: editingProduct.nombre,
+        precio_base: editingProduct.precio,
+        tipo_producto: editingProduct.tipo_producto === 'Preparado' ? 'donut' : 'cafe',
+        activo_web: editingProduct.estado === 'Disponible',
+      };
+
+      const response = await fetch(`http://localhost:8080/api/v1/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        await loadProductos();
+        setShowEditDialog(false);
+        setEditingProduct(null);
+        toast.success('Producto actualizado exitosamente');
+      } else {
+        let errorMessage = `Error ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.message) errorMessage = errorData.message;
+        } catch {}
+        throw new Error(errorMessage);
+      }
     } catch (error) {
       console.error('Error actualizando producto:', error);
-      toast.error("Error al actualizar producto");
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al actualizar producto: ${errorMessage}`);
     }
   };
 
@@ -173,15 +275,27 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
     if (!deletingProductId) return;
 
     try {
-      // Simular eliminación
-      setProductos(productos.filter(p => p.id !== deletingProductId));
-      
-      toast.success("Producto eliminado exitosamente");
-      setShowDeleteDialog(false);
-      setDeletingProductId(null);
+      const response = await fetch(`http://localhost:8080/api/v1/products/${deletingProductId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await loadProductos();
+        toast.success("Producto eliminado exitosamente");
+        setShowDeleteDialog(false);
+        setDeletingProductId(null);
+      } else {
+        let errorMessage = `Error ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData?.message) errorMessage = errorData.message;
+        } catch {}
+        throw new Error(errorMessage);
+      }
     } catch (error) {
       console.error('Error eliminando producto:', error);
-      toast.error("Error al eliminar producto");
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al eliminar producto: ${errorMessage}`);
     }
   };
 
@@ -315,16 +429,16 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
                 Categoría
               </Label>
               <Select
-                value={newProduct?.categoria || ""}
-                onValueChange={(value: string) => setNewProduct(newProduct ? { ...newProduct, categoria: value } : null)}
+                value={newProduct?.categoria_id?.toString() || (categorias.length > 0 ? categorias[0].categoria_id.toString() : "1")}
+                onValueChange={(value: string) => setNewProduct(newProduct ? { ...newProduct, categoria_id: parseInt(value) } : null)}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Seleccione categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoriasProductos.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {categorias.map((cat) => (
+                    <SelectItem key={cat.categoria_id} value={cat.categoria_id.toString()}>
+                      {cat.nombre_categoria}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -419,9 +533,9 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
                   <SelectValue placeholder="Seleccione categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoriasProductos.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {categorias.map((cat) => (
+                    <SelectItem key={cat.categoria_id} value={cat.nombre_categoria}>
+                      {cat.nombre_categoria}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -500,6 +614,41 @@ export function ProductosSimple({ userRole = "Administrador" }: ProductosProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog para agregar categoría */}
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agregar Nueva Categoría</DialogTitle>
+            <DialogDescription>
+              Crea una nueva categoría para organizar tus productos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category-name" className="text-right">
+                Nombre
+              </Label>
+              <Input
+                id="category-name"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="col-span-3"
+                placeholder="Ej: Bebidas, Postres, etc."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCategoryDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveCategory}>
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Categoría
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

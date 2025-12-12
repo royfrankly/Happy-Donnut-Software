@@ -36,29 +36,25 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // Validar datos recibidos
-        $data = $request->validate([
-            'categoria_id'    => 'required|integer|exists:categorias,categoria_id',
-            'nombre_producto' => 'required|string|max:255',
-            'descripcion'     => 'nullable|string',
-            'precio_base'     => 'required|numeric|min:0',
-            'tipo_producto'   => 'required|in:donut,cafe,otro',
-            'activo_web'      => 'required|boolean',
-        ]);
-
         try {
-            $product = Producto::create($data);
+            // Crear el producto en la BD
+            $product = Producto::create([
+                'categoria_id' => $request->input('categoria_id', 1),
+                'nombre_producto' => $request->input('nombre_producto'),
+                'descripcion' => $request->input('descripcion', ''),
+                'precio_base' => $request->input('precio_base'),
+                'tipo_producto' => $request->input('tipo_producto'),
+                'activo_web' => $request->input('activo_web', true),
+            ]);
 
             return response()->json([
                 'message' => 'Producto creado exitosamente',
                 'product' => $product->load('categoria'),
             ], 201);
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            // Por ejemplo, nombre_producto único
+        } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Ya existe un producto con ese nombre.',
-                'error'   => 'unique_violation',
-            ], 422);
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

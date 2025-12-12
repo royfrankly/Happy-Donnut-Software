@@ -19,6 +19,9 @@ Route::prefix('/v1')->group(function () {
     Route::get('/products/available', [GatewayController::class, 'getAvailableProducts']);
     Route::get('/products/search', [GatewayController::class, 'searchProducts']);
     Route::get('/categories', [GatewayController::class, 'getCategories']);
+    Route::post('/categories', [GatewayController::class, 'createCategory']);
+    Route::put('/categories/{id}', [GatewayController::class, 'updateCategory']);
+    Route::delete('/categories/{id}', [GatewayController::class, 'deleteCategory']);
 
     // Productos (administrativos)
     Route::get('/products', [GatewayController::class, 'getProducts']);

@@ -72,6 +72,17 @@ Route::middleware('auth:sanctum')->prefix('/v1')->group(function () {
 Route::prefix('/v1')->group(function () {
     Route::get('/products/available', [ProductController::class, 'getAvailable']);
     Route::get('/products/search', [ProductController::class, 'search']);
+    
+    // Categorías públicas
     Route::get('/categories', [CategoriaController::class, 'index']);
+    Route::post('/categories', [CategoriaController::class, 'store']);
+    Route::put('/categories/{id}', [CategoriaController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoriaController::class, 'destroy']);
+    
     Route::get('/promotions/active', [PromocionController::class, 'getActive']);
+    
+    // Ruta de prueba para DELETE
+    Route::get('/test-delete', function() {
+        return response()->json(['message' => 'Test DELETE working']);
+    });
 });

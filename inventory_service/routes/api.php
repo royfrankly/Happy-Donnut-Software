@@ -49,3 +49,10 @@ Route::middleware('auth:sanctum')->prefix('/v1')->group(function () {
 Route::prefix('/v1')->group(function () {
     Route::get('/inventory/available/{productId}', [InventoryController::class, 'getAvailableQuantity']);
 });
+
+
+// Rutas para Apertura de Caja
+Route::get('/apertura/verificar-estado', [App\Http\Controllers\AperturaController::class, 'verificarEstado']);
+Route::post('/apertura', [App\Http\Controllers\AperturaController::class, 'store']);
+
+Route::get('/apertura/actual', [App\Http\Controllers\AperturaController::class, 'estadoActual']);

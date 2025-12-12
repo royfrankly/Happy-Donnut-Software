@@ -24,5 +24,12 @@ export default defineConfig({
     open: true,
     strictPort: true,
     //base: '/admin/',
+    allowedHosts: [
+      'happydonut.online',
+      'www.happydonut.online',
+      'localhost',
+      // Si usas ngrok u otro tunel, agrégalo aquí también
+    ],
   },
+  
 });
